@@ -92,7 +92,7 @@
 <details>
 <summary>按下超火流星后，点掉超火流星，并在小队频道发送：“？(倒置)”</summary>
 <img width="600" src="https://github.com/Natsukage/Assets/blob/main/PostNamazu/images/%E8%B6%85%E7%81%AB%E6%B5%81%E6%98%9F1.png"/>
-<img width="600" src="https://github.com/Natsukage/Assets/blob/main/PostNamazu/images/%E8%B6%85%E7%81%AB%E6%B5%81%E6%98%9F2.png"/>
+<img width="600" src="https://github.com/Natsukage/Assets/blob/main/PostNamazu/images/%E8%B6%85%E7%81%AB%E6%B5%81%E6%98%9F2.jpg"/>
 </details>
 
 收到来自特定玩家的组队邀请时自动发送/join指令接受邀请。  

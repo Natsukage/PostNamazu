@@ -52,6 +52,8 @@
 <details>
 <summary>发动即刻咏唱后，将即刻的键位替换为复活</summary>
 <img width="600" src="https://github.com/Natsukage/Assets/blob/main/PostNamazu/images/%E5%8D%B3%E5%88%BB.gif"/>
+<img width="600" src="https://github.com/Natsukage/Assets/blob/main/PostNamazu/images/%E6%8A%80%E8%83%BD%E6%9B%BF%E6%8D%A24.png"/>
+<img width="600" src="https://github.com/Natsukage/Assets/blob/main/PostNamazu/images/%E6%8A%80%E8%83%BD%E6%9B%BF%E6%8D%A25.png"/>
 </details>
 
 由于翻页的触发条件限定为即刻咏唱使用成功获得即刻咏唱状态，因此在即刻cd时、自身硬直中等情况下，即使激情连打，只要没有成功的用出即刻，就不会误触发翻页。  
@@ -71,6 +73,7 @@
 <details>
 <summary>当触发死而不僵时，在小队频道内喊“用力奶我！&lt;se.8&gt;</summary>
 <img width="600" src="https://github.com/Natsukage/Assets/blob/main/PostNamazu/images/%E6%AD%BB%E8%80%8C%E4%B8%8D%E5%83%B5.gif"/>
+<img width="600" src="https://github.com/Natsukage/Assets/blob/main/PostNamazu/images/%E6%AD%BB%E8%80%8C%E4%B8%8D%E5%83%B52.png"/>
 </details>
 
 由于触发条件为获得buff，因此在按下活死人后如果没有触发死而不僵，也就不会喊话。  
@@ -80,6 +83,7 @@
 <details>
 <summary>复活喊话，由于死人不太好找这里就先用医术作例子了</summary>
 <img width="600" src="https://github.com/Natsukage/Assets/blob/main/PostNamazu/images/%E6%8A%80%E8%83%BD%E5%96%8A%E8%AF%9D%E6%8F%90%E7%A4%BA1.png"/>
+<img width="600" src="https://github.com/Natsukage/Assets/blob/main/PostNamazu/images/%E6%8A%80%E8%83%BD%E5%96%8A%E8%AF%9D%E6%8F%90%E7%A4%BA2.png"/>
 </details>
 
 同理，可以实现挑衅退避时队内发言，找到怪物后在部队频道内通报坐标，鱼王上钩时第一时间~~晒~~转发至通讯贝内等，原理基本相同，这里不多赘述。

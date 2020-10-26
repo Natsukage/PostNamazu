@@ -97,9 +97,17 @@
 实现方法非常简单，大家可以自行举一反三，这里不多赘述。
 
 ### PaisleyPark兼容
-鲶鱼精邮差兼容PaisleyPark的本地标点指令，使用方式与原版PaisleyPark相同。将PaisleyPark适用的标点指令文本发送至`http://127.0.0.1:你设置的端口/place`即可。  
+鲶鱼精邮差兼容PaisleyPark的标点指令，可以接收触发器发送的坐标JSON字符串进行本地标点。  
+使用方式与原版PaisleyPark相同。将PaisleyPark适用的标点指令文本发送至`http://127.0.0.1:你设置的端口/place`即可。  
+文本指令与标点指令使用相同的端口，区别在于后面跟随的路径（/command /place）。
 只要端口号正确对应，不需修改即可继续使用原版PaisleyPark的触发指令。  
 具体使用方式请参考PaisleyPark的相关教程。
 
+### 冲突
+在Triggernometry高级触发器中建立将指令发送给鲶鱼精邮差的非异步（没有勾选计划任务页的“异步执行，不会阻止执行其他操作”选项的）触发器时，点击主界面的Test Action将会造成ACT假死直至超时（持续数分钟）  
+这是由于在Triggernometry中测试非异步触发器时，触发器将会使用ACT的当前主进程进行触发器的测试，并且在获得反馈结果之前将会冻结ACT主进程阻止后续操作。因此同为ACT插件的邮差也会被阻塞，无法接收到Triggernometry的触发指令并进行反馈，造成死锁。此状况将会一直持续直至Triggernometry的操作由于超时而被中断。  
+此情况仅会出现于手动点击Test Action进行触发器测试的场合。当触发器由游戏内日志行正常触发时，无论是同步还是异步执行的触发器都不会阻塞ACT的主线程，也不会发生上述的死锁现象。此外，对于异步触发器，即使通过在触发器页面手动点击Test Action进行触发器测试，Triggernometry也会在新建立的线程中执行触发器操作，而不会阻塞ACT主进程。因此同样不会造成死锁。  
+综上，此问题并不会影响鲶鱼精邮差与Triggernometry在游戏中的正常使用（无论是同步还是异步触发器操作）。但是在测试自己建立的触发器时，为了防止上述情况发生，建议尽量将与邮差进行交互的触发器操作设置为异步执行，或通过游戏内日志的触发方式对触发器进行测试。
+
 ### 感谢
-感谢@PrototypeSeiren @Bluefissure @DieMoe233 各位大佬的付出与帮助。  
+感谢 [@PrototypeSeiren](https://github.com/PrototypeSeiren)[@Bluefissure](https://github.com/Bluefissure)[@DieMoe233](https://github.com/DieMoe233)各位大佬的付出与帮助。  

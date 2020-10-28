@@ -10,15 +10,18 @@ namespace PostNamazu.Models
 {
     public delegate void ReceivedHttpCommandRequestEventHandler(string command);
     public delegate void ReceivedHttpWayMarksRequestEventHandler(string waymarkJson);
+    public delegate void OnExceptionEventHandler(Exception ex);
 
     internal class HttpServer
     {
         private Thread _serverThread;
         private HttpListener _listener;
+        SynchronizationContext ui = SynchronizationContext.Current;
         public int Port { get; private set; }
 
         public event ReceivedHttpCommandRequestEventHandler ReceivedCommandRequest;
         public event ReceivedHttpWayMarksRequestEventHandler ReceivedWayMarksRequest;
+        public event OnExceptionEventHandler OnException;
 
         /// <summary>
         ///     在指定端口启动监听
@@ -53,9 +56,18 @@ namespace PostNamazu.Models
 
         private void Listen()
         {
-            _listener = new HttpListener();
-            _listener.Prefixes.Add("http://*:" + Port + "/");
-            _listener.Start();
+            try
+            {
+                _listener = new HttpListener();
+                _listener.Prefixes.Add("http://*:" + Port + "/");
+                _listener.Start();
+            }
+            catch (Exception ex)
+            {
+                OnException?.Invoke(ex);
+                return;
+            }
+
 
             ThreadPool.QueueUserWorkItem(o =>
             {

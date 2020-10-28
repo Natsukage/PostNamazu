@@ -76,6 +76,7 @@ namespace PostNamazu
                 _httpServer = new HttpServer((int) PluginUI.TextPort.Value);
                 _httpServer.ReceivedCommandRequest += DoTextCommand;
                 _httpServer.ReceivedWayMarksRequest += DoWaymarks;
+                _httpServer.OnException += OnException;
 
                 PluginUI.ButtonStart.Enabled = false;
                 PluginUI.ButtonStop.Enabled = true;
@@ -83,7 +84,7 @@ namespace PostNamazu
             }
             catch (Exception ex)
             {
-                PluginUI.Log($"无法在{_httpServer.Port}端口启动监听\n{ex.Message}");
+                OnException(ex);
             }
         }
 
@@ -92,11 +93,27 @@ namespace PostNamazu
             _httpServer.Stop();
             _httpServer.ReceivedCommandRequest -= DoTextCommand;
             _httpServer.ReceivedWayMarksRequest -= DoWaymarks;
+            _httpServer.OnException -= OnException;
 
             PluginUI.ButtonStart.Enabled = true;
             PluginUI.ButtonStop.Enabled = false;
             PluginUI.Log("已停止监听");
         }
+        /// <summary>
+        /// 委托给HttpServer类的异常处理
+        /// </summary>
+        /// <param name="ex"></param>
+        private void OnException(Exception ex)
+        {
+            string errorMessage = $"无法在{_httpServer.Port}端口启动监听\n{ex.Message}";
+            
+            PluginUI.ButtonStart.Enabled = true;
+            PluginUI.ButtonStop.Enabled = false;
+
+            PluginUI.Log(errorMessage);
+            MessageBox.Show(errorMessage);
+        }
+
 
 
         /// <summary>

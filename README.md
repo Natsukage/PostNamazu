@@ -23,8 +23,32 @@
 鲶鱼精邮差为ACT插件，需要使用ACT加载使用。  
 将下载后的压缩包解压后，通过ACT的插件列表页添加PostNamazu.dll插件并启用，即可在插件栏看到鲶鱼精邮差的面板。  
 > 2个dll文件需放在同一目录下。
+> 不要放在ACT的根目录下。
+> 只需要添加PostNamazu.dll一个文件即可。
 
-### 使用方法
+### 使用方法（新·推荐）
+鲶鱼精邮差本身不需要进行特别设置，只需在ACT中加载并启用即可。  
+需要注意其加载顺序必须位于**解析插件**与**Triggernometry**之后。否则在初始化时将会提示错误。
+在ACT的Triggernometry高级触发器中添加触发器，并将动作类型选择为最后一项“Named callback operation”，  
+第一项Callback name设置为`DoTextCommand`或`command`  
+第二项Callback parameter 设置为你要执行的文本指令，例如`/e 123`。测试触发后如果在游戏内看到提示文字即为配置成功。  
+> 注意：随着Triggernometry的更新，选项的顺序、文字内容、翻译可能会发生变化，请以实际情况为准。
+
+<details>
+<summary>Triggernometry高级触发器设置</summary>
+<img width="600" src="https://github.com/Natsukage/Assets/blob/main/PostNamazu/images/%E8%81%94%E5%8A%A81.png"/>
+</details>
+如果有多个FF14游戏进程存在，鲶鱼精邮差会自动匹配解析插件当前对应的游戏进程。可以在解析插件的面板中进行切换。
+<details>
+<summary>切换方式</summary>
+<img width="600" src="https://github.com/Natsukage/Assets/blob/main/PostNamazu/images/%E9%B2%B6%E9%B1%BC%E7%B2%BE%E8%AE%BE%E7%BD%AE2.png"/>
+</details>
+
+### 使用方法（旧）
+> 此方法已经过时，建议使用前面提到的callback方式进行调用，  
+但是此方法依然可用，可以用于配合Triggernometry以外的其他应用或 按照旧版本格式编写的触发器。
+为避免和其他应用（例如PaisleyPark等）发生端口占用冲突，如无必要，则不建议再采用这种方式进行调用。
+
 启动程序后，**设置端口**并点击“启动”开始在指定端口监听。  
 勾选*自动启动*选项后，每次启动ACT加载插件完毕后鲶鱼精邮差会自动启动监听。  
 <details>
@@ -39,15 +63,11 @@
 <img width="600" src="https://github.com/Natsukage/Assets/blob/main/PostNamazu/images/%E9%AB%98%E7%BA%A7%E8%A7%A6%E5%8F%91%E5%99%A8%E8%AE%BE%E7%BD%AE.png"/>
 </details>  
 
-如果有多个FF14游戏进程存在，鲶鱼精邮差会自动匹配解析插件当前对应的游戏进程。可以在解析插件的面板中进行切换。
-<details>
-<summary>切换方式</summary>
-<img width="600" src="https://github.com/Natsukage/Assets/blob/main/PostNamazu/images/%E9%B2%B6%E9%B1%BC%E7%B2%BE%E8%AE%BE%E7%BD%AE2.png"/>
-</details>
+
 
 ### 应用场景举例
 #### 翻页宏
-当特定条件触发时执行/hotbar set或/hotbar copy指令将指定键位设置为指定技能。
+当特定条件触发时执行`/hotbar set`或`/hotbar copy`指令将指定键位设置为指定技能。
 
 <details>
 <summary>发动即刻咏唱后，将即刻的键位替换为复活</summary>
@@ -107,8 +127,24 @@
 只要端口号正确对应，不需修改即可继续使用原版PaisleyPark的触发指令。  
 具体使用方式请参考PaisleyPark的相关教程。
 
+此外，鲶鱼精邮差也支持通过前面的callback operation方式执行标点指令，只需要将Callback name设置为`DoWaymarks`或`place`即可。  
+<details>
+<summary>如图所示</summary>
+<img width="600" src="https://github.com/Natsukage/Assets/blob/main/PostNamazu/images/%E8%81%94%E5%8A%A82.png"/>
+</details>
+>使用callback operation方式执行标点指令时也不需要监听端口，可以和原版PaisleyPark共存。
+
+#### 标点暂存
+将`save`指令发送至鲶鱼精邮差的place方法可以令鲶鱼精邮差暂存当前场地标点。并可以在随后使用`load`指令恢复之前保存的场地标点。当你希望在某些特定的场合下进行本地标点，并在使用完毕后恢复原本的场地标点的场合，可以使用这组指令。  
+暂存的标点并不会本地保存，在ACT或鲶鱼精邮差退出后即会失效。
+<details>
+<summary>使用方法图例</summary>
+<img width="600" src="https://github.com/Natsukage/Assets/blob/main/PostNamazu/images/%E6%9A%82%E5%AD%98.png"/>
+</details>
+
+
 ### 冲突
-在Triggernometry高级触发器中建立将指令发送给鲶鱼精邮差的非异步（没有勾选计划任务页的“异步执行，不会阻止执行其他操作”选项的）触发器时，点击主界面的Test Action将会造成ACT假死直至超时（持续数分钟）  
+在Triggernometry高级触发器中建立将指令发送给鲶鱼精邮差的非异步（没有勾选计划任务页的“异步执行，不会阻止执行其他操作”选项的）触发器时，点击主界面的Test Action将会造成ACT假死直至超时（持续数分钟）。  
 这是由于在Triggernometry中测试非异步触发器时，触发器将会使用ACT的当前主进程进行触发器的测试，并且在获得反馈结果之前将会冻结ACT主进程阻止后续操作。因此同为ACT插件的邮差也会被阻塞，无法接收到Triggernometry的触发指令并进行反馈，造成死锁。此状况将会一直持续直至Triggernometry的操作由于超时而被中断。  
 此情况仅会出现于手动点击Test Action进行触发器测试的场合。当触发器由游戏内日志行正常触发时，无论是同步还是异步执行的触发器都不会阻塞ACT的主线程，也不会发生上述的死锁现象。此外，对于异步触发器，即使通过在触发器页面手动点击Test Action进行触发器测试，Triggernometry也会在新建立的线程中执行触发器操作，而不会阻塞ACT主进程。因此同样不会造成死锁。  
 综上，此问题并不会影响鲶鱼精邮差与Triggernometry在游戏中的正常使用（无论是同步还是异步触发器操作）。但是在测试自己建立的触发器时，为了防止上述情况发生，建议尽量将与邮差进行交互的触发器操作设置为异步执行，或通过游戏内日志的触发方式对触发器进行测试。

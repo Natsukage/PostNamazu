@@ -351,7 +351,9 @@ namespace PostNamazu
                 if (triggPlugin == null)
                     throw new Exception("找不到Triggernometry插件，请确保其加载顺序位于鲶鱼精邮差之前。");
                 triggPlugin.RegisterNamedCallback("DoTextCommand", DoTextCommand, null);
+                triggPlugin.RegisterNamedCallback("command", DoTextCommand, null);
                 triggPlugin.RegisterNamedCallback("DoWaymarks", DoWaymarks, null);
+                triggPlugin.RegisterNamedCallback("place", DoWaymarks, null);
             }
             catch (Exception ex) {
                 PluginUI.Log(ex.Message);

@@ -27,20 +27,18 @@ namespace PostNamazu.Models
         ///     在指定端口启动监听
         /// </summary>
         /// <param name="port">要启动的端口</param>
-        public HttpServer(int port)
-        {
+        public HttpServer(int port) {
             Initialize(port);
         }
 
         /// <summary>
         ///     在随机端口启动监听
         /// </summary>
-        public HttpServer()
-        {
+        public HttpServer() {
             //get an empty port
             var l = new TcpListener(IPAddress.Loopback, 0);
             l.Start();
-            var port = ((IPEndPoint) l.LocalEndpoint).Port;
+            var port = ((IPEndPoint)l.LocalEndpoint).Port;
             l.Stop();
             Initialize(port);
         }
@@ -48,40 +46,31 @@ namespace PostNamazu.Models
         /// <summary>
         ///     停止监听并释放资源
         /// </summary>
-        public void Stop()
-        {
+        public void Stop() {
             _serverThread.Abort();
             _listener.Stop();
         }
 
-        private void Listen()
-        {
-            try
-            {
+        private void Listen() {
+            try {
                 _listener = new HttpListener();
                 _listener.Prefixes.Add("http://*:" + Port + "/");
                 _listener.Start();
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex) {
                 OnException?.Invoke(ex);
                 return;
             }
 
 
-            ThreadPool.QueueUserWorkItem(o =>
-            {
-                try
-                {
+            ThreadPool.QueueUserWorkItem(o => {
+                try {
                     while (_listener.IsListening)
-                        ThreadPool.QueueUserWorkItem(c =>
-                        {
+                        ThreadPool.QueueUserWorkItem(c => {
                             if (!(c is HttpListenerContext context))
                                 throw new ArgumentNullException(nameof(context));
-                            try
-                            {
-                                switch (context.Request.Url.AbsolutePath.ToLower())
-                                {
+                            try {
+                                switch (context.Request.Url.AbsolutePath.ToLower()) {
                                     case @"/command":
                                     case @"/command/":
                                         DoTextCommand(ref context);
@@ -90,30 +79,29 @@ namespace PostNamazu.Models
                                     case @"/place/":
                                         DoWayMarks(ref context);
                                         break;
+                                    case @"/mark":
+                                    case @"/mark/":
+                                        break;
                                     default:
                                         throw new Exception(@"不支持的操作（目前仅支持/command /place）");
                                 }
                             }
-                            catch (Exception ex)
-                            {
+                            catch (Exception ex) {
                                 MessageBox.Show(ex.Message);
-                                context.Response.StatusCode = (int) HttpStatusCode.InternalServerError;
+                                context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
                             }
-                            finally
-                            {
+                            finally {
                                 context.Response.OutputStream.Close();
                             }
                         }, _listener.GetContext());
                 }
-                catch
-                {
+                catch {
                     // ignored
                 }
             });
         }
 
-        private void DoTextCommand(ref HttpListenerContext context)
-        {
+        private void DoTextCommand(ref HttpListenerContext context) {
             var command = new StreamReader(context.Request.InputStream, Encoding.UTF8).ReadToEnd();
 
             ReceivedCommandRequest?.Invoke(command);
@@ -121,12 +109,11 @@ namespace PostNamazu.Models
             var buf = Encoding.UTF8.GetBytes(command);
             context.Response.ContentLength64 = buf.Length;
             context.Response.OutputStream.Write(buf, 0, buf.Length);
-            context.Response.StatusCode = (int) HttpStatusCode.OK;
+            context.Response.StatusCode = (int)HttpStatusCode.OK;
             context.Response.OutputStream.Flush();
         }
 
-        private void DoWayMarks(ref HttpListenerContext context)
-        {
+        private void DoWayMarks(ref HttpListenerContext context) {
             var waymarkJson = new StreamReader(context.Request.InputStream, Encoding.UTF8).ReadToEnd();
 
             ReceivedWayMarksRequest?.Invoke(waymarkJson);
@@ -134,12 +121,11 @@ namespace PostNamazu.Models
             var buf = Encoding.UTF8.GetBytes("OK!");
             context.Response.ContentLength64 = buf.Length;
             context.Response.OutputStream.Write(buf, 0, buf.Length);
-            context.Response.StatusCode = (int) HttpStatusCode.OK;
+            context.Response.StatusCode = (int)HttpStatusCode.OK;
             context.Response.OutputStream.Flush();
         }
 
-        private void Initialize(int port)
-        {
+        private void Initialize(int port) {
             Port = port;
             _serverThread = new Thread(Listen);
             _serverThread.Start();

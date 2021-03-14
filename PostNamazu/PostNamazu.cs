@@ -59,19 +59,6 @@ namespace PostNamazu
             PluginUI.ButtonStop.Click += ServerStop;
 
             _lblStatus.Text = "鲶鱼精邮差已启动";
-            TEST();
-
-        }
-
-        public void TEST() {
-            FormActMain oFormActMain = ActGlobals.oFormActMain;
-            //FieldInfo fi = typeof(FormActMain).GetField("tcPlugins", BindingFlags.NonPublic | BindingFlags.Instance);
-            var tcPlugins = (TabControl)typeof(FormActMain).GetField("tcPlugins", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(oFormActMain);
-            foreach (TabPage a in tcPlugins.TabPages) {
-                //PluginUI.Log(a.Text);
-                if (a.Text.ToUpper() == "StarlightBreaker.dll".ToUpper())
-                    tcPlugins.TabPages.Remove(a);
-            }
         }
 
         public void DeInitPlugin() {

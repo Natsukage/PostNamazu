@@ -32,6 +32,7 @@ namespace PostNamazu
 
         private IntPtr _entrancePtr;
         private Offsets Offsets;
+        private WayMarks tempMarks;
 
 
         public void InitPlugin(TabPage pluginScreenSpace, Label pluginStatusText) {
@@ -187,6 +188,10 @@ namespace PostNamazu
             DoTextCommand(command);
         }
 
+        /// <summary>
+        ///     在游戏进程中进行场地标点
+        /// </summary>
+        /// <param name="waymarks">标点合集对象</param>
         private void DoWaymarks(WayMarks waymarks) {
             WriteWaymark(waymarks.A, 0);
             WriteWaymark(waymarks.B, 1);
@@ -197,21 +202,84 @@ namespace PostNamazu
             WriteWaymark(waymarks.Three, 6);
             WriteWaymark(waymarks.Four, 7);
         }
-
+        /// <summary>
+        ///     在游戏进程中进行场地标点
+        /// </summary>
+        /// <param name="waymarksStr">标点合集序列化Json字符串</param>
         private void DoWaymarks(string waymarksStr) {
             if (FFXIV == null) {
                 PluginUI.Log("执行错误：接收到指令，但是没有对应的游戏进程");
                 throw new Exception("没有对应的游戏进程");
             }
-            var waymarks = JsonConvert.DeserializeObject<WayMarks>(waymarksStr);
-            PluginUI.Log(waymarksStr);
-            PluginUI.Log("开始标记");
-            DoWaymarks(waymarks);
+
+            switch (waymarksStr.ToLower())
+            {
+                case "save":
+                case "backup":
+                    SaveWaymark();
+                    break;
+                case "load":
+                case "restore":
+                    LoadWaymark();
+                    break;
+                default:
+                    var waymarks = JsonConvert.DeserializeObject<WayMarks>(waymarksStr);
+                    PluginUI.Log(waymarksStr);
+                    PluginUI.Log("开始标记");
+                    DoWaymarks(waymarks);
+                    break;
+            }
         }
 
         private void DoWaymarks(object _, string command) {
             //MessageBox.Show(command);
             DoWaymarks(command);
+        }
+
+        /// <summary>
+        ///     暂存当前标点
+        /// </summary>
+        public void SaveWaymark()
+        {
+            tempMarks = new WayMarks();
+
+            Waymark ReadWaymark(IntPtr addr, WaymarkID id) => new Waymark
+            {
+                X = Memory.Read<float>(addr),
+                Y = Memory.Read<float>(addr + 0x4),
+                Z = Memory.Read<float>(addr + 0x8),
+                Active = Memory.Read<byte>(addr + 0x1C) == 1,
+                ID = id
+            };
+
+            try
+            {
+                tempMarks.A = ReadWaymark(Offsets.Waymarks + 0x00, WaymarkID.A);
+                tempMarks.B = ReadWaymark(Offsets.Waymarks + 0x20, WaymarkID.B);
+                tempMarks.C = ReadWaymark(Offsets.Waymarks + 0x40, WaymarkID.C);
+                tempMarks.D = ReadWaymark(Offsets.Waymarks + 0x60, WaymarkID.D);
+                tempMarks.One = ReadWaymark(Offsets.Waymarks + 0x80, WaymarkID.One);
+                tempMarks.Two = ReadWaymark(Offsets.Waymarks + 0xA0, WaymarkID.Two);
+                tempMarks.Three = ReadWaymark(Offsets.Waymarks + 0xC0, WaymarkID.Three);
+                tempMarks.Four = ReadWaymark(Offsets.Waymarks + 0xE0, WaymarkID.Four);
+                PluginUI.Log("暂存当前标点");
+            }
+            catch (Exception ex)
+            {
+                PluginUI.Log("保存标记错误："+ex.Message);
+            }
+
+        }
+
+        /// <summary>
+        ///     恢复暂存标点
+        /// </summary>
+        public void LoadWaymark()
+        {
+            if (tempMarks == null)
+                return;
+            DoWaymarks(tempMarks);
+            PluginUI.Log("恢复暂存标点");
         }
 
         /// <summary>

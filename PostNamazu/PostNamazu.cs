@@ -333,8 +333,11 @@ namespace PostNamazu
                 if (FFXIV != GetFFXIVProcess()) {
                     Detach();
                     FFXIV = GetFFXIVProcess();
-                    if (FFXIV != null && GetOffsets())
-                        Attach();
+                    if (FFXIV != null)
+                        if (FFXIV.ProcessName == "ffxiv")
+                            PluginUI.Log("错误：游戏运行于DX9模式下");
+                        else if (GetOffsets())
+                            Attach();
                 }
 
                 Thread.Sleep(3000);

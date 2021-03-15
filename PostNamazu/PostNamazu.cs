@@ -95,6 +95,8 @@ namespace PostNamazu
             _httpServer.Stop();
             _httpServer.ReceivedCommandRequest -= DoTextCommand;
             _httpServer.ReceivedWayMarksRequest -= DoWaymarks;
+            _httpServer.ReceivedSendKeyRequest -= DoSendKey;
+            _httpServer.ReceivedMarkingRequest -= DoMarking;
             _httpServer.OnException -= OnException;
 
             PluginUI.ButtonStart.Enabled = true;

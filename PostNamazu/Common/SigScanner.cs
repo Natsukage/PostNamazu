@@ -389,7 +389,16 @@ namespace PostNamazu.Models
             if (results.Count > 1)
                 throw new ArgumentException($"Provided pattern found {results.Count}, only a single result is acceptable");
 
-            return results[0];
+            var scanRet = results[0];
+            var insnByte = ReadByte(scanRet);
+            if (insnByte == 0xE8 || insnByte == 0xE9)
+                return ReadCallSig(scanRet);
+            return scanRet;
+        }
+
+        private IntPtr ReadCallSig(IntPtr sigLocation) {
+            var jumpOffset = ReadInt32(IntPtr.Add(sigLocation, 1));
+            return IntPtr.Add(sigLocation, 5 + jumpOffset);
         }
 
 

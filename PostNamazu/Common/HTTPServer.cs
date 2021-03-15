@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -8,8 +9,7 @@ using System.Windows.Forms;
 
 namespace PostNamazu.Models
 {
-    public delegate void ReceivedHttpCommandRequestEventHandler(string command);
-    public delegate void ReceivedHttpWayMarksRequestEventHandler(string waymarkJson);
+    public delegate void ReceivedRequestEventHandler(string payload);
     public delegate void OnExceptionEventHandler(Exception ex);
 
     internal class HttpServer
@@ -19,9 +19,16 @@ namespace PostNamazu.Models
         SynchronizationContext ui = SynchronizationContext.Current;
         public int Port { get; private set; }
 
-        public event ReceivedHttpCommandRequestEventHandler ReceivedCommandRequest;
-        public event ReceivedHttpWayMarksRequestEventHandler ReceivedWayMarksRequest;
+        public event ReceivedRequestEventHandler ReceivedCommandRequest;
+        public event ReceivedRequestEventHandler ReceivedWayMarksRequest;
+        public event ReceivedRequestEventHandler ReceivedSendKeyRequest;
+        public event ReceivedRequestEventHandler ReceivedMarkingRequest;
         public event OnExceptionEventHandler OnException;
+
+        private delegate void URLAction(ref HttpListenerContext context);
+        private delegate void ReceivedEventHandler(string marking);
+        private Dictionary<string, URLAction> UrlBind = new Dictionary<string, URLAction>();
+
 
         /// <summary>
         ///     在指定端口启动监听
@@ -29,6 +36,7 @@ namespace PostNamazu.Models
         /// <param name="port">要启动的端口</param>
         public HttpServer(int port) {
             Initialize(port);
+            URLBind();
         }
 
         /// <summary>
@@ -62,7 +70,6 @@ namespace PostNamazu.Models
                 return;
             }
 
-
             ThreadPool.QueueUserWorkItem(o => {
                 try {
                     while (_listener.IsListening)
@@ -70,21 +77,7 @@ namespace PostNamazu.Models
                             if (!(c is HttpListenerContext context))
                                 throw new ArgumentNullException(nameof(context));
                             try {
-                                switch (context.Request.Url.AbsolutePath.ToLower()) {
-                                    case @"/command":
-                                    case @"/command/":
-                                        DoTextCommand(ref context);
-                                        break;
-                                    case @"/place":
-                                    case @"/place/":
-                                        DoWayMarks(ref context);
-                                        break;
-                                    case @"/mark":
-                                    case @"/mark/":
-                                        break;
-                                    default:
-                                        throw new Exception(@"不支持的操作（目前仅支持/command /place）");
-                                }
+                                GetAction(context.Request.Url.AbsolutePath)(ref context);
                             }
                             catch (Exception ex) {
                                 MessageBox.Show(ex.Message);
@@ -101,24 +94,36 @@ namespace PostNamazu.Models
             });
         }
 
-        private void DoTextCommand(ref HttpListenerContext context) {
-            var command = new StreamReader(context.Request.InputStream, Encoding.UTF8).ReadToEnd();
-
-            ReceivedCommandRequest?.Invoke(command);
-
-            var buf = Encoding.UTF8.GetBytes(command);
-            context.Response.ContentLength64 = buf.Length;
-            context.Response.OutputStream.Write(buf, 0, buf.Length);
-            context.Response.StatusCode = (int)HttpStatusCode.OK;
-            context.Response.OutputStream.Flush();
+        private void URLBind() {
+            SetAction("command", delegate (ref HttpListenerContext context) { DoAction(ref context, ReceivedCommandRequest); });
+            SetAction("place", delegate (ref HttpListenerContext context) { DoAction(ref context, ReceivedWayMarksRequest); });
+            SetAction("sendkey", delegate (ref HttpListenerContext context) { DoAction(ref context, ReceivedSendKeyRequest); });
+            SetAction("mark", delegate (ref HttpListenerContext context) { DoAction(ref context, ReceivedMarkingRequest); });
         }
 
-        private void DoWayMarks(ref HttpListenerContext context) {
-            var waymarkJson = new StreamReader(context.Request.InputStream, Encoding.UTF8).ReadToEnd();
+        private void SetAction(string url, URLAction uRLAction) {
+            url = url.Trim(new char[] { '/' }).ToLower();
+            UrlBind.Add(url, uRLAction);
+        }
 
-            ReceivedWayMarksRequest?.Invoke(waymarkJson);
+        private URLAction GetAction(string url) {
+            try {
+                url = url.Trim(new char[] { '/' }).ToLower();
+                return UrlBind[url];
 
-            var buf = Encoding.UTF8.GetBytes("OK!");
+            }
+            catch {
+                throw new Exception($@"不支持的操作{url}");
+            }
+        }
+
+        private void DoAction(ref HttpListenerContext context, ReceivedRequestEventHandler e) {
+
+            var command = new StreamReader(context.Request.InputStream, Encoding.UTF8).ReadToEnd();
+
+            e?.Invoke(command);
+
+            var buf = Encoding.UTF8.GetBytes(command);
             context.Response.ContentLength64 = buf.Length;
             context.Response.OutputStream.Write(buf, 0, buf.Length);
             context.Response.StatusCode = (int)HttpStatusCode.OK;

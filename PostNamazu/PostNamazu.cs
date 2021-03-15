@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -34,7 +36,7 @@ namespace PostNamazu
         private Offsets Offsets;
         private WayMarks tempMarks;
 
-
+        #region Init
         public void InitPlugin(TabPage pluginScreenSpace, Label pluginStatusText) {
             pluginScreenSpace.Text = "鲶鱼精邮差";
 
@@ -76,6 +78,8 @@ namespace PostNamazu
                 _httpServer = new HttpServer((int)PluginUI.TextPort.Value);
                 _httpServer.ReceivedCommandRequest += DoTextCommand;
                 _httpServer.ReceivedWayMarksRequest += DoWaymarks;
+                _httpServer.ReceivedSendKeyRequest += DoSendKey;
+                _httpServer.ReceivedMarkingRequest += DoMarking;
                 _httpServer.OnException += OnException;
 
                 PluginUI.ButtonStart.Enabled = false;
@@ -144,6 +148,151 @@ namespace PostNamazu
         }
 
         /// <summary>
+        ///     取得解析插件的进程（从獭爹那里偷来的）
+        /// </summary>
+        /// <returns></returns>
+        private FFXIV_ACT_Plugin.FFXIV_ACT_Plugin GetFfxivPlugin() {
+            FFXIV_ACT_Plugin.FFXIV_ACT_Plugin ffxivActPlugin = null;
+            foreach (var actPluginData in ActGlobals.oFormActMain.ActPlugins)
+                if (actPluginData.pluginFile.Name.ToUpper().Contains("FFXIV_ACT_Plugin".ToUpper()) &&
+                    actPluginData.lblPluginStatus.Text.ToUpper().Contains("FFXIV Plugin Started.".ToUpper()))
+                    ffxivActPlugin = (FFXIV_ACT_Plugin.FFXIV_ACT_Plugin)actPluginData.pluginObj;
+            return ffxivActPlugin ?? throw new Exception("找不到FFXIV解析插件，请确保其加载顺序位于鲶鱼精邮差之前。");
+        }
+
+        /// <summary>
+        ///     获取几个重要的地址
+        /// </summary>
+        /// <returns>返回是否成功找到入口地址</returns>
+        private bool GetOffsets() {
+            PluginUI.Log("Getting Offsets......");
+            try {
+                var scanner = new SigScanner(FFXIV);
+                try {
+                    _entrancePtr = scanner.ScanText("4C 8B DC 53 56 48 81 EC 18 02 00 00 48 8B 05");
+                }
+                catch (ArgumentOutOfRangeException) {
+                    PluginUI.Log("无法对当前进程注入\n可能是已经被其他进程注入了？");
+                    return false;
+                }
+
+                Offsets = new Offsets(scanner);
+#if DEBUG
+                PluginUI.Log(Offsets.ProcessChatBoxPtr);
+                PluginUI.Log(Offsets.UiModule);
+                PluginUI.Log(Offsets.RaptureModule);
+#endif
+            }
+            catch (ArgumentOutOfRangeException) {
+                PluginUI.Log("查找失败：找不到特征值");
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        ///     获取当前FFXIV解析插件的活动进程
+        /// </summary>
+        /// <returns>解析插件当前对应进程</returns>
+        private Process GetFFXIVProcess() {
+            return _ffxivPlugin.DataRepository.GetCurrentFFXIVProcess();
+        }
+
+        /// <summary>
+        ///     代替ProcessChanged委托，手动循环检测当前活动进程并进行注入。
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void ProcessSwitcher(object sender, DoWorkEventArgs e) {
+            while (true) {
+                if (_processSwitcher.CancellationPending) {
+                    e.Cancel = true;
+                    break;
+                }
+
+                if (FFXIV != GetFFXIVProcess()) {
+                    Detach();
+                    FFXIV = GetFFXIVProcess();
+                    if (FFXIV != null)
+                        if (FFXIV.ProcessName == "ffxiv")
+                            PluginUI.Log("错误：游戏运行于DX9模式下");
+                        else if (GetOffsets())
+                            Attach();
+                }
+
+                Thread.Sleep(3000);
+            }
+        }
+
+        /// <summary>
+        /// TriggerNemotry集成
+        /// </summary>
+        private void TriggIntegration() {
+            try {
+                var trigg = ActGlobals.oFormActMain.ActPlugins.FirstOrDefault(x => x.pluginFile.Name.ToUpper().Contains("Triggernometry".ToUpper()));
+                triggPlugin = (TriggernometryProxy.ProxyPlugin)trigg.pluginObj;
+                if (triggPlugin == null)
+                    throw new Exception("找不到Triggernometry插件，请确保其加载顺序位于鲶鱼精邮差之前。");
+                triggPlugin.RegisterNamedCallback("DoTextCommand", DoTextCommand, null);
+                triggPlugin.RegisterNamedCallback("DoWaymarks", DoWaymarks, null);
+                triggPlugin.RegisterNamedCallback("command", DoTextCommand, null);
+                triggPlugin.RegisterNamedCallback("place", DoWaymarks, null);
+                triggPlugin.RegisterNamedCallback("sendkey", DoSendKey, null);
+                triggPlugin.RegisterNamedCallback("mark", DoMarking, null);
+            }
+            catch (Exception ex) {
+                PluginUI.Log(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// 取消TriggerNemotry集成，不过不取消似乎也没啥问题
+        /// </summary>
+        private void TriggPartition() {
+            //triggPlugin.UnregisterNamedCallback();
+        }
+
+        /// <summary>
+        ///     解析插件对应进程改变时触发，解除当前注入并注入新的游戏进程
+        ///     目前由于解析插件的bug，ProcessChanged事件无法正常触发，暂时弃用。
+        /// </summary>
+        /// <param name="tProcess"></param>
+        [Obsolete]
+        private void ProcessChanged(Process tProcess) {
+            if (tProcess.Id != FFXIV?.Id) {
+                Detach();
+                FFXIV = tProcess;
+                if (FFXIV != null)
+                    if (GetOffsets())
+                        Attach();
+                PluginUI.Log($"已切换至进程{tProcess.Id}");
+            }
+        }
+
+        /// <summary>
+        ///     AssemblyResolve事件的处理函数，该函数用来自定义程序集加载逻辑
+        /// </summary>
+        /// <param name="sender">事件引发源</param>
+        /// <param name="args">事件参数，从该参数中可以获取加载失败的程序集的名称</param>
+        /// <returns></returns>
+        private Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args) {
+            var name = args.Name.Split(',')[0];
+            //if (name != "GreyMagic") return null;
+            switch (name) {
+                case "GreyMagic":
+                    var selfPluginData = ActGlobals.oFormActMain.PluginGetSelfData(this);
+                    var path = selfPluginData.pluginFile.DirectoryName;
+                    return Assembly.LoadFile($@"{path}\{name}.dll");
+                default:
+                    return null;
+            }
+        }
+        #endregion
+
+        #region TextCommand
+
+        /// <summary>
         ///     在游戏进程中执行给出的指令
         /// </summary>
         /// <param name="command">需要执行的指令</param>
@@ -187,6 +336,9 @@ namespace PostNamazu
             //MessageBox.Show(command);
             DoTextCommand(command);
         }
+        #endregion
+
+        #region WayMarks
 
         /// <summary>
         ///     在游戏进程中进行场地标点
@@ -333,149 +485,125 @@ namespace PostNamazu
             // Write the active state
             Memory.Write(markAddr + 0x1C, (byte)(waymark.Active ? 1 : 0));
         }
+        #endregion
 
-        /// <summary>
-        ///     取得解析插件的进程（从獭爹那里偷来的）
-        /// </summary>
-        /// <returns></returns>
-        private FFXIV_ACT_Plugin.FFXIV_ACT_Plugin GetFfxivPlugin() {
-            FFXIV_ACT_Plugin.FFXIV_ACT_Plugin ffxivActPlugin = null;
-            foreach (var actPluginData in ActGlobals.oFormActMain.ActPlugins)
-                if (actPluginData.pluginFile.Name.ToUpper().Contains("FFXIV_ACT_Plugin".ToUpper()) &&
-                    actPluginData.lblPluginStatus.Text.ToUpper().Contains("FFXIV Plugin Started.".ToUpper()))
-                    ffxivActPlugin = (FFXIV_ACT_Plugin.FFXIV_ACT_Plugin)actPluginData.pluginObj;
-            return ffxivActPlugin ?? throw new Exception("找不到FFXIV解析插件，请确保其加载顺序位于鲶鱼精邮差之前。");
-        }
-
-        /// <summary>
-        ///     获取几个重要的地址
-        /// </summary>
-        /// <returns>返回是否成功找到入口地址</returns>
-        private bool GetOffsets() {
-            PluginUI.Log("Getting Offsets......");
+        #region SendKey
+        private void DoSendKey(string command) {
+            PluginUI.Log($"收到按键：{command}");
             try {
-                var scanner = new SigScanner(FFXIV);
-                try {
-                    _entrancePtr = scanner.ScanText("4C 8B DC 53 56 48 81 EC 18 02 00 00 48 8B 05");
-                }
-                catch (ArgumentOutOfRangeException) {
-                    PluginUI.Log("无法对当前进程注入\n可能是已经被其他进程注入了？");
-                    return false;
-                }
-
-                Offsets = new Offsets(scanner);
-#if DEBUG
-                PluginUI.Log(Offsets.ProcessChatBoxPtr);
-                PluginUI.Log(Offsets.UiModule);
-                PluginUI.Log(Offsets.RaptureModule);
-#endif
+                var keycode = int.Parse(command);
+                SendKeycode(keycode);
             }
-            catch (ArgumentOutOfRangeException) {
-                PluginUI.Log("查找失败：找不到特征值");
-                return false;
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        ///     获取当前FFXIV解析插件的活动进程
-        /// </summary>
-        /// <returns>解析插件当前对应进程</returns>
-        private Process GetFFXIVProcess() {
-            return _ffxivPlugin.DataRepository.GetCurrentFFXIVProcess();
-        }
-
-        /// <summary>
-        ///     代替ProcessChanged委托，手动循环检测当前活动进程并进行注入。
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void ProcessSwitcher(object sender, DoWorkEventArgs e) {
-            while (true) {
-                if (_processSwitcher.CancellationPending) {
-                    e.Cancel = true;
-                    break;
-                }
-
-                if (FFXIV != GetFFXIVProcess()) {
-                    Detach();
-                    FFXIV = GetFFXIVProcess();
-                    if (FFXIV != null)
-                        if (FFXIV.ProcessName == "ffxiv")
-                            PluginUI.Log("错误：游戏运行于DX9模式下");
-                        else if (GetOffsets())
-                            Attach();
-                }
-
-                Thread.Sleep(3000);
+            catch(Exception ex) {
+                PluginUI.Log($"发送按键失败：{ex}");
             }
         }
+        private void DoSendKey(object _, string command) {
+            //MessageBox.Show(command);
+            DoSendKey(command);
+        }
 
-        /// <summary>
-        /// TriggerNemotry集成
-        /// </summary>
-        private void TriggIntegration() {
+        public static void SendKeycode(int keycode) {
+            SendMessageToWindow(WinAPI.WM_KEYDOWN, keycode, 0);
+            SendMessageToWindow(WinAPI.WM_KEYUP, keycode, 0);
+        }
+
+        public static void SendMessageToWindow(uint code, int wparam, int lparam) {
+            IntPtr hwnd = FFXIV.MainWindowHandle;
+            if (hwnd != IntPtr.Zero) {
+                IntPtr res = WinAPI.SendMessage(hwnd, code, (IntPtr)wparam, (IntPtr)lparam);
+            }
+        }
+        #endregion
+
+        #region Marking
+        private void DoMarking(string command) {
+            if (FFXIV == null) {
+                PluginUI.Log("执行错误：接收到指令，但是没有对应的游戏进程");
+                throw new Exception("没有对应的游戏进程");
+            }
+
+            if (command == "")
+                throw new Exception("指令为空");
+            var dic = ParseQueryString(command);
+
+            PluginUI.Log(command);
+
+            if (dic.ContainsKey("MarkType")) {
+                var MarkTypeStr = dic["MarkType"];
+                var markingType = MarkingType.attack1;
+                if (!Enum.TryParse < MarkingType > (MarkTypeStr, true,out markingType)) {
+                    PluginUI.Log($"未知的标记类型:{MarkTypeStr}");
+                    return;
+                }
+                if (dic.ContainsKey("ActorID")) {
+                    var ActorIDStr = dic["ActorID"];
+                    var ActorID = UInt32.Parse(ActorIDStr, NumberStyles.HexNumber);
+                    DoMarkingByActorID(ActorID, markingType);
+                }
+                else if (dic.ContainsKey("Name")){
+                    var Name = dic["Name"];
+                    GetActorIDByName(Name, markingType);
+                }
+                else {
+                    PluginUI.Log("错误指令");
+                }
+            }
+            else {
+                PluginUI.Log("错误指令");
+            };
+            return;
+        }
+        private void GetActorIDByName(string Name, MarkingType markingType) {
+            var combatant = _ffxivPlugin.DataRepository.GetCombatantList().FirstOrDefault(i => i.Name != null && i.ID != 0xE0000000 && i.Name.Equals(Name));
+            if (combatant == null) {
+                PluginUI.Log($"未能找到{Name}");
+                return;
+            }
+            //PluginUI.Log($"BNpcID={combatant.BNpcNameID},ActorID={combatant.ID:X},markingType={markingType}");
+            DoMarkingByActorID(combatant.ID, markingType);
+        }
+        private void DoMarkingByActorID(uint ActorID, MarkingType markingType) {
+            var combatant = _ffxivPlugin.DataRepository.GetCombatantList().FirstOrDefault(i => i.ID==ActorID);
+            if (combatant == null) {
+                PluginUI.Log($"未能找到{ActorID}");
+                return;
+            }
+            PluginUI.Log($"ActorID={ActorID:X},markingType={(int)markingType}");
+            var assemblyLock = Memory.Executor.AssemblyLock;
+            var flag = false;
             try {
-                var trigg = ActGlobals.oFormActMain.ActPlugins.FirstOrDefault(x => x.pluginFile.Name.ToUpper().Contains("Triggernometry".ToUpper()));
-                triggPlugin = (TriggernometryProxy.ProxyPlugin)trigg.pluginObj;
-                if (triggPlugin == null)
-                    throw new Exception("找不到Triggernometry插件，请确保其加载顺序位于鲶鱼精邮差之前。");
-                triggPlugin.RegisterNamedCallback("DoTextCommand", DoTextCommand, null);
-                triggPlugin.RegisterNamedCallback("command", DoTextCommand, null);
-                triggPlugin.RegisterNamedCallback("DoWaymarks", DoWaymarks, null);
-                triggPlugin.RegisterNamedCallback("place", DoWaymarks, null);
+                Monitor.Enter(assemblyLock, ref flag);
+                _ = Memory.CallInjected64<char>(Offsets.MarkingFunc, Offsets.MarkingController, markingType, ActorID);
             }
-            catch (Exception ex) {
-                PluginUI.Log(ex.Message);
+            finally {
+                if (flag) Monitor.Exit(assemblyLock);
             }
         }
 
-        /// <summary>
-        /// 取消TriggerNemotry集成，不过不取消似乎也没啥问题
-        /// </summary>
-        private void TriggPartition() {
-            //triggPlugin.UnregisterNamedCallback();
+        private void DoMarking(object _, string command) {
+            DoMarking(command);
         }
-
-        /// <summary>
-        ///     解析插件对应进程改变时触发，解除当前注入并注入新的游戏进程
-        ///     目前由于解析插件的bug，ProcessChanged事件无法正常触发，暂时弃用。
-        /// </summary>
-        /// <param name="tProcess"></param>
-        [Obsolete]
-        private void ProcessChanged(Process tProcess) {
-            if (tProcess.Id != FFXIV?.Id) {
-                Detach();
-                FFXIV = tProcess;
-                if (FFXIV != null)
-                    if (GetOffsets())
-                        Attach();
-                PluginUI.Log($"已切换至进程{tProcess.Id}");
+        public static Dictionary<string, string> ParseQueryString(string url) {
+            if (string.IsNullOrWhiteSpace(url)) {
+                throw new ArgumentNullException("字符串为空");
             }
-        }
-
-        /// <summary>
-        ///     AssemblyResolve事件的处理函数，该函数用来自定义程序集加载逻辑
-        /// </summary>
-        /// <param name="sender">事件引发源</param>
-        /// <param name="args">事件参数，从该参数中可以获取加载失败的程序集的名称</param>
-        /// <returns></returns>
-        private Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args) {
-            var name = args.Name.Split(',')[0];
-            //if (name != "GreyMagic") return null;
-            switch (name) {
-                case "GreyMagic":
-                case "Nancy":
-                case "Nancy.Hosting.Self":
-                    var selfPluginData = ActGlobals.oFormActMain.PluginGetSelfData(this);
-                    var path = selfPluginData.pluginFile.DirectoryName;
-                    return Assembly.LoadFile($@"{path}\{name}.dll");
-                    break;
-                default:
-                    return null;
+            if (string.IsNullOrWhiteSpace(url)) {
+                return new Dictionary<string, string>();
             }
+            var dic = url
+                    //2.通过&划分各个参数
+                    .Split(new char[] { '&' }, StringSplitOptions.RemoveEmptyEntries)
+                    //3.通过=划分参数key和value,且保证只分割第一个=字符
+                    .Select(param => param.Split(new char[] { '=' }, 2, StringSplitOptions.RemoveEmptyEntries))
+                    //4.通过相同的参数key进行分组
+                    .GroupBy(part => part[0], part => part.Length > 1 ? part[1] : string.Empty)
+                    //5.将相同key的value以,拼接
+                    .ToDictionary(group => group.Key, group => string.Join(",", group));
 
+            return dic;
         }
+        #endregion
+
     }
 }

@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>PostNamazu</RootNamespace>
     <AssemblyName>PostNamazu</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
     <NuGetPackageImportStamp>
@@ -171,6 +171,7 @@
   <ItemGroup>
     <Compile Include="Common\HTTPServer.cs" />
     <Compile Include="Common\MemHelper.cs" />
+    <Compile Include="Models\MarkType.cs" />
     <Compile Include="Models\Offsets.cs" />
     <Compile Include="Common\SigScanner.cs" />
     <Compile Include="Common\SizeCache.cs" />
@@ -183,6 +184,7 @@
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="WinAPI.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

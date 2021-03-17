@@ -163,10 +163,6 @@
       <HintPath>..\packages\System.Xml.ReaderWriter.4.3.1\lib\net46\System.Xml.ReaderWriter.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="TriggerNometry">
-      <HintPath>Lib\TriggerNometry.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Common\HTTPServer.cs" />

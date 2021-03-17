@@ -30,7 +30,7 @@ namespace PostNamazu
         public static Process FFXIV;
         private static ExternalProcessMemory Memory;
         private FFXIV_ACT_Plugin.FFXIV_ACT_Plugin _ffxivPlugin;
-        private TriggernometryProxy.ProxyPlugin triggPlugin;
+        //private TriggernometryProxy.ProxyPlugin triggPlugin;
 
         private IntPtr _entrancePtr;
         private Offsets Offsets;
@@ -233,15 +233,38 @@ namespace PostNamazu
         private void TriggIntegration() {
             try {
                 var trigg = ActGlobals.oFormActMain.ActPlugins.FirstOrDefault(x => x.pluginFile.Name.ToUpper().Contains("Triggernometry".ToUpper()));
-                triggPlugin = (TriggernometryProxy.ProxyPlugin)trigg.pluginObj;
-                if (triggPlugin == null)
+                //triggPlugin = (TriggernometryProxy.ProxyPlugin)trigg.pluginObj;
+
+                if (trigg == null || trigg.pluginObj == null)
                     throw new Exception("找不到Triggernometry插件，请确保其加载顺序位于鲶鱼精邮差之前。");
-                triggPlugin.RegisterNamedCallback("DoTextCommand", DoTextCommand, null);
+
+                var triggType = trigg.pluginObj.GetType();
+                var deleType = triggType.GetNestedType("CustomCallbackDelegate");
+                if (deleType == null)
+                    throw new Exception($"{DateTime.Now.Year}年了，害搁这用老版本触发器呢？");
+
+                var registerType = triggType.GetMethod("RegisterNamedCallback");
+
+                var textCommandDele = Delegate.CreateDelegate(deleType, this, typeof(PostNamazu).GetMethod("DoTextCommand"));
+                registerType?.Invoke(trigg.pluginObj, new object[] { "DoTextCommand", textCommandDele, null });
+                registerType?.Invoke(trigg.pluginObj, new object[] { "command", textCommandDele, null });
+
+                var wayMarkDele = Delegate.CreateDelegate(deleType, this, typeof(PostNamazu).GetMethod("DoWaymarks"));
+                registerType?.Invoke(trigg.pluginObj, new object[] { "DoWaymarks", wayMarkDele, null });
+                registerType?.Invoke(trigg.pluginObj, new object[] { "place", wayMarkDele, null });
+
+                var sendKeyDele = Delegate.CreateDelegate(deleType, this, typeof(PostNamazu).GetMethod("DoSendKey"));
+                registerType?.Invoke(trigg.pluginObj, new object[] { "sendkey", sendKeyDele, null });
+
+                var markingDele = Delegate.CreateDelegate(deleType, this, typeof(PostNamazu).GetMethod("DoMarking"));
+                registerType?.Invoke(trigg.pluginObj, new object[] { "mark", markingDele, null });
+
+                /*triggPlugin.RegisterNamedCallback("DoTextCommand", DoTextCommand, null);
                 triggPlugin.RegisterNamedCallback("DoWaymarks", DoWaymarks, null);
                 triggPlugin.RegisterNamedCallback("command", DoTextCommand, null);
                 triggPlugin.RegisterNamedCallback("place", DoWaymarks, null);
                 triggPlugin.RegisterNamedCallback("sendkey", DoSendKey, null);
-                triggPlugin.RegisterNamedCallback("mark", DoMarking, null);
+                triggPlugin.RegisterNamedCallback("mark", DoMarking, null);*/
             }
             catch (Exception ex) {
                 PluginUI.Log(ex.Message);
@@ -334,7 +357,7 @@ namespace PostNamazu
             }
         }
 
-        private void DoTextCommand(object _, string command) {
+        public void DoTextCommand(object _, string command) {
             //MessageBox.Show(command);
             DoTextCommand(command);
         }
@@ -385,7 +408,7 @@ namespace PostNamazu
             }
         }
 
-        private void DoWaymarks(object _, string command) {
+        public void DoWaymarks(object _, string command) {
             //MessageBox.Show(command);
             DoWaymarks(command);
         }
@@ -500,7 +523,7 @@ namespace PostNamazu
                 PluginUI.Log($"发送按键失败：{ex}");
             }
         }
-        private void DoSendKey(object _, string command) {
+        public void DoSendKey(object _, string command) {
             //MessageBox.Show(command);
             DoSendKey(command);
         }
@@ -583,7 +606,7 @@ namespace PostNamazu
             }
         }
 
-        private void DoMarking(object _, string command) {
+        public void DoMarking(object _, string command) {
             DoMarking(command);
         }
         public static Dictionary<string, string> ParseQueryString(string url) {

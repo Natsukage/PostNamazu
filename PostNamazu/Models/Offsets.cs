@@ -21,7 +21,7 @@ namespace PostNamazu.Models
             _scanner = scanner;
             //Compatible with some plugins of Dalamud
             //ProcessChatBoxPtr = _scanner.ScanText("40 53 56 57 48 83 EC 70 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 44 24 ?? 48 8B 02");
-            ProcessChatBoxPtr = _scanner.ScanText("E8 ? ? ? ? 48 8D 4C 24 ? E8 ? ? ? ? E9 ? ? ? ? 49 8B CE");
+            ProcessChatBoxPtr = _scanner.ScanText("E8 ? ? ? ? 48 8D 4C 24 ? E8 ? ? ? ? C7 07 ? ? ? ? 48 8B C7 48 8B 8C 24");
             UiModulePtr = _scanner.GetStaticAddressFromSig("48 8B 05 ?? ?? ?? ?? 48 8B D9 8B 40 14 85 C0");
             ModuleOffsetPtr = _scanner.ScanText("48 8D 8F ?? ?? ?? ?? 4C 8B C7 48 8D 54 24 ??") + 3;
             ModuleOffset = _scanner.ReadInt32(ModuleOffsetPtr);

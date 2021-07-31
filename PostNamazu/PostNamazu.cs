@@ -554,6 +554,8 @@ namespace PostNamazu
 
             PluginUI.Log(command);
 
+            bool localOnly = dic.ContainsKey("Local") && bool.Parse(dic["Local"]);
+
             if (dic.ContainsKey("MarkType")) {
                 var MarkTypeStr = dic["MarkType"];
                 var markingType = MarkingType.attack1;
@@ -564,11 +566,11 @@ namespace PostNamazu
                 if (dic.ContainsKey("ActorID")) {
                     var ActorIDStr = dic["ActorID"];
                     var ActorID = UInt32.Parse(ActorIDStr, NumberStyles.HexNumber);
-                    DoMarkingByActorID(ActorID, markingType);
+                    DoMarkingByActorID(ActorID, markingType, localOnly);
                 }
                 else if (dic.ContainsKey("Name")){
                     var Name = dic["Name"];
-                    GetActorIDByName(Name, markingType);
+                    GetActorIDByName(Name, markingType, localOnly);
                 }
                 else {
                     PluginUI.Log("错误指令");
@@ -579,27 +581,30 @@ namespace PostNamazu
             };
             return;
         }
-        private void GetActorIDByName(string Name, MarkingType markingType) {
+        private void GetActorIDByName(string Name, MarkingType markingType, bool localOnly = false) {
             var combatant = _ffxivPlugin.DataRepository.GetCombatantList().FirstOrDefault(i => i.Name != null && i.ID != 0xE0000000 && i.Name.Equals(Name));
             if (combatant == null) {
                 PluginUI.Log($"未能找到{Name}");
                 return;
             }
             //PluginUI.Log($"BNpcID={combatant.BNpcNameID},ActorID={combatant.ID:X},markingType={markingType}");
-            DoMarkingByActorID(combatant.ID, markingType);
+            DoMarkingByActorID(combatant.ID, markingType, localOnly);
         }
-        private void DoMarkingByActorID(uint ActorID, MarkingType markingType) {
+        private void DoMarkingByActorID(uint ActorID, MarkingType markingType, bool localOnly = false) {
             var combatant = _ffxivPlugin.DataRepository.GetCombatantList().FirstOrDefault(i => i.ID==ActorID);
             if (combatant == null) {
                 PluginUI.Log($"未能找到{ActorID}");
                 return;
             }
-            PluginUI.Log($"ActorID={ActorID:X},markingType={(int)markingType}");
+            PluginUI.Log($"ActorID={ActorID:X},markingType={(int)markingType},LocalOnly={localOnly}");
             var assemblyLock = Memory.Executor.AssemblyLock;
             var flag = false;
             try {
                 Monitor.Enter(assemblyLock, ref flag);
-                _ = Memory.CallInjected64<char>(Offsets.MarkingFunc, Offsets.MarkingController, markingType, ActorID);
+                if (!localOnly)
+                    _ = Memory.CallInjected64<char>(Offsets.MarkingFunc, Offsets.MarkingController, markingType, ActorID);
+                else //本地标点的markingType从0开始，因此需要-1
+                    _ = Memory.CallInjected64<char>(Offsets.LocalMarkingFunc, Offsets.MarkingController, markingType - 1, ActorID, 0);
             }
             finally {
                 if (flag) Monitor.Exit(assemblyLock);

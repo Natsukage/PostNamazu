@@ -10,6 +10,7 @@ namespace PostNamazu.Models
         private readonly SigScanner _scanner;
         public IntPtr ProcessChatBoxPtr { get; }
         public IntPtr MarkingFunc { get; }
+        public IntPtr LocalMarkingFunc { get; }
         public IntPtr UiModulePtr { get; }
         public IntPtr UiModule => _scanner.ReadIntPtr(_scanner.ReadIntPtr(UiModulePtr));
         public IntPtr ModuleOffsetPtr { get; }
@@ -31,7 +32,7 @@ namespace PostNamazu.Models
 
             //char __fastcall sub_1407A6A60(__int64 g_MarkingController, __int64 MarkType, __int64 ActorID)
             MarkingFunc = _scanner.ScanText("48 89 5C 24 ?? 48 89 6C 24 ?? 57 48 83 EC ?? 8D 42");
-
+            LocalMarkingFunc = _scanner.ScanText("E8 ?? ?? ?? ?? 4C 8B C5 8B D7");
             //Waymarks = MarkingController + 432;
         }
     }

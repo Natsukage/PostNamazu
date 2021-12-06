@@ -157,7 +157,7 @@ namespace PostNamazu
             FFXIV_ACT_Plugin.FFXIV_ACT_Plugin ffxivActPlugin = null;
             foreach (var actPluginData in ActGlobals.oFormActMain.ActPlugins)
                 if (actPluginData.pluginFile.Name.ToUpper().Contains("FFXIV_ACT_Plugin".ToUpper()) &&
-                    actPluginData.lblPluginStatus.Text.ToUpper().Contains("FFXIV Plugin Started.".ToUpper()))
+                    actPluginData.lblPluginStatus.Text.ToUpper().Contains("FFXIV_ACT_Plugin Started.".ToUpper()))
                     ffxivActPlugin = (FFXIV_ACT_Plugin.FFXIV_ACT_Plugin)actPluginData.pluginObj;
             return ffxivActPlugin ?? throw new Exception("找不到FFXIV解析插件，请确保其加载顺序位于鲶鱼精邮差之前。");
         }
@@ -171,7 +171,7 @@ namespace PostNamazu
             try {
                 var scanner = new SigScanner(FFXIV);
                 try {
-                    _entrancePtr = scanner.ScanText("4C 8B DC 53 56 48 81 EC 18 02 00 00 48 8B 05");
+                    _entrancePtr = scanner.ScanText("4C 8B DC 53 56 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 48 83 B9");
                 }
                 catch (ArgumentOutOfRangeException) {
                     PluginUI.Log("无法对当前进程注入\n可能是已经被其他进程注入了？");

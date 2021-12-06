@@ -25,7 +25,8 @@ namespace PostNamazu
         public bool AutoStart => _autoStart.Checked;
         private static readonly string SettingsFile = Path.Combine(ActGlobals.oFormActMain.AppDataFolder.FullName, "Config\\PostNamazu.config.xml");
 
-        public void InitializeComponent(TabPage pluginScreenSpace) {
+        public void InitializeComponent(TabPage pluginScreenSpace)
+        {
             _mainGroupBox = new GroupBox { Location = new Point(12, 12), Text = "监听设置", AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink };
             _lbPort = new Label { AutoSize = true, Text = "端口:", Location = new Point(10, 33) };
             TextPort = new NumericUpDown { Location = new Point(85, 30), DecimalPlaces = 0, Maximum = 65535, Value = 2019, Size = new Size(100, 35) };
@@ -61,30 +62,53 @@ namespace PostNamazu
             PerformLayout();
         }
 
-        public void Log(string log) {
+        public void Log(string log)
+        {
             AddParserMessage(log);
         }
 
-        public void Log(IntPtr log) {
+        public void Log(IntPtr log)
+        {
             AddParserMessage($"{ log.ToInt64():X}");
         }
 
-        public static void cmdCopyProblematic_Click(object sender, EventArgs e) {
+        public static void cmdCopyProblematic_Click(object sender, EventArgs e)
+        {
             StringBuilder stringBuilder = new StringBuilder();
-            foreach (object item in lstMessages.Items) {
+            foreach (object item in lstMessages.Items)
+            {
                 stringBuilder.AppendLine((item ?? "").ToString());
             }
-            if (stringBuilder.Length > 0) {
+            if (stringBuilder.Length > 0)
+            {
                 Clipboard.SetText(stringBuilder.ToString());
             }
         }
 
-        public static void cmdClearMessages_Click(object sender, EventArgs e) {
+        public static void cmdClearMessages_Click(object sender, EventArgs e)
+        {
             lstMessages.Items.Clear();
         }
 
-        public static void AddParserMessage(string message) {
-            ACTWrapper.RunOnACTUIThread((System.Action)delegate {
+        internal static void RunOnACTUIThread(Action code)
+        {
+            if (((Control)(object)ActGlobals.oFormActMain).InvokeRequired)
+            {
+                if (!((Control)(object)ActGlobals.oFormActMain).IsDisposed && !((Control)(object)ActGlobals.oFormActMain).Disposing)
+                {
+                    ((Control)(object)ActGlobals.oFormActMain).Invoke((Delegate)code);
+                }
+            }
+            else
+            {
+                code();
+            }
+        }
+
+        public static void AddParserMessage(string message)
+        {
+            RunOnACTUIThread(delegate
+            {
                 if (lstMessages.Items.Count > 500)
                     lstMessages.Items.RemoveAt(0);
                 bool scroll = lstMessages.TopIndex == lstMessages.Items.Count - lstMessages.Height / lstMessages.ItemHeight;
@@ -94,17 +118,21 @@ namespace PostNamazu
             });
         }
 
-        void LoadSettings() {
+        void LoadSettings()
+        {
 
-            if (File.Exists(SettingsFile)) {
+            if (File.Exists(SettingsFile))
+            {
                 XmlDocument xdo = new XmlDocument();
-                try {
+                try
+                {
                     xdo.Load(SettingsFile);
                     XmlNode head = xdo.SelectSingleNode("Config");
                     TextPort.Text = head?.SelectSingleNode("Port")?.InnerText;
                     _autoStart.Checked = bool.Parse(head?.SelectSingleNode("AutoStart")?.InnerText ?? "false");
                 }
-                catch (Exception ex) {
+                catch (Exception ex)
+                {
                     Log("配置文件载入异常");
                     File.Delete(SettingsFile);
                     Log("已清除错误的配置文件");
@@ -113,7 +141,8 @@ namespace PostNamazu
 
             }
         }
-        public void SaveSettings() {
+        public void SaveSettings()
+        {
             FileStream fs = new FileStream(SettingsFile, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
             XmlTextWriter xWriter = new XmlTextWriter(fs, Encoding.UTF8) { Formatting = Formatting.Indented, Indentation = 1, IndentChar = '\t' };
             xWriter.WriteStartDocument(true);

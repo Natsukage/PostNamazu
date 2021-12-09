@@ -31,7 +31,7 @@ namespace PostNamazu.Models
             MarkingController = _scanner.GetStaticAddressFromSig("48 8B 94 24 ? ? ? ? 48 8D 0D ? ? ? ? 41 B0 01");
 
             //char __fastcall sub_1407A6A60(__int64 g_MarkingController, __int64 MarkType, __int64 ActorID)
-            MarkingFunc = _scanner.ScanText("48 89 5C 24 ?? 48 89 6C 24 ?? 57 48 83 EC ?? 8D 42");
+            MarkingFunc = _scanner.ScanText("48 89 5C 24 10 48 89 6C 24 18 57 48 83 EC 20 8D 42");
             LocalMarkingFunc = _scanner.ScanText("E8 ?? ?? ?? ?? 4C 8B C5 8B D7");
             //Waymarks = MarkingController + 432;
         }

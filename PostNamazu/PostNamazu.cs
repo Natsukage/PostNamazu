@@ -43,6 +43,8 @@ namespace PostNamazu
             PluginUI = new PostNamazuUi();
 
             PluginUI.InitializeComponent(pluginScreenSpace);
+            PluginUI.Log($"插件版本:{Assembly.GetExecutingAssembly().GetName().Version}");
+
             Dock = DockStyle.Fill; // Expand the UserControl to fill the tab's client space
             _lblStatus = pluginStatusText; // Hand the status label's reference to our local var
 

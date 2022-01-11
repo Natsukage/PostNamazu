@@ -78,10 +78,10 @@ namespace PostNamazu
         private void ServerStart(object sender = null, EventArgs e = null) {
             try {
                 _httpServer = new HttpServer((int)PluginUI.TextPort.Value);
-                _httpServer.ReceivedCommandRequest += DoTextCommand;
-                _httpServer.ReceivedWayMarksRequest += DoWaymarks;
-                _httpServer.ReceivedSendKeyRequest += DoSendKey;
-                _httpServer.ReceivedMarkingRequest += DoMarking;
+                _httpServer.SetAction("command", DoTextCommand);
+                _httpServer.SetAction("place", DoWaymarks);
+                _httpServer.SetAction("sendkey", DoSendKey);
+                _httpServer.SetAction("mark", DoMarking);
                 _httpServer.OnException += OnException;
 
                 PluginUI.ButtonStart.Enabled = false;
@@ -95,10 +95,7 @@ namespace PostNamazu
 
         private void ServerStop(object sender = null, EventArgs e = null) {
             _httpServer.Stop();
-            _httpServer.ReceivedCommandRequest -= DoTextCommand;
-            _httpServer.ReceivedWayMarksRequest -= DoWaymarks;
-            _httpServer.ReceivedSendKeyRequest -= DoSendKey;
-            _httpServer.ReceivedMarkingRequest -= DoMarking;
+            _httpServer.ClearAction();
             _httpServer.OnException -= OnException;
 
             PluginUI.ButtonStart.Enabled = true;

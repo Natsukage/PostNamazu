@@ -30,7 +30,7 @@ namespace PostNamazu
         public static Process FFXIV;
         private static ExternalProcessMemory Memory;
         private FFXIV_ACT_Plugin.FFXIV_ACT_Plugin _ffxivPlugin;
-        //private TriggernometryProxy.ProxyPlugin triggPlugin;
+        private TriggernometryProxy.ProxyPlugin triggPlugin;
 
         private IntPtr _entrancePtr;
         private Offsets Offsets;
@@ -156,7 +156,8 @@ namespace PostNamazu
             FFXIV_ACT_Plugin.FFXIV_ACT_Plugin ffxivActPlugin = null;
             foreach (var actPluginData in ActGlobals.oFormActMain.ActPlugins)
                 if (actPluginData.pluginFile.Name.ToUpper().Contains("FFXIV_ACT_Plugin".ToUpper()) &&
-                    actPluginData.lblPluginStatus.Text.ToUpper().Contains("FFXIV_ACT_Plugin Started.".ToUpper()))
+                    (actPluginData.lblPluginStatus.Text.ToUpper().Contains("FFXIV Plugin Started.".ToUpper())|| //国服旧版本
+                     actPluginData.lblPluginStatus.Text.ToUpper().Contains("FFXIV_ACT_Plugin Started.".ToUpper())))  //国际服新版本
                     ffxivActPlugin = (FFXIV_ACT_Plugin.FFXIV_ACT_Plugin)actPluginData.pluginObj;
             return ffxivActPlugin ?? throw new Exception("找不到FFXIV解析插件，请确保其加载顺序位于鲶鱼精邮差之前。");
         }
@@ -232,8 +233,8 @@ namespace PostNamazu
         private void TriggIntegration() {
             try {
                 var trigg = ActGlobals.oFormActMain.ActPlugins.FirstOrDefault(x => x.pluginFile.Name.ToUpper().Contains("Triggernometry".ToUpper()));
-                //triggPlugin = (TriggernometryProxy.ProxyPlugin)trigg.pluginObj;
-
+                triggPlugin = (TriggernometryProxy.ProxyPlugin)trigg.pluginObj;
+                /*
                 if (trigg == null || trigg.pluginObj == null)
                     throw new Exception("找不到Triggernometry插件，请确保其加载顺序位于鲶鱼精邮差之前。");
 
@@ -256,14 +257,14 @@ namespace PostNamazu
                 registerType?.Invoke(trigg.pluginObj, new object[] { "sendkey", sendKeyDele, null });
 
                 var markingDele = Delegate.CreateDelegate(deleType, this, typeof(PostNamazu).GetMethod("DoMarking"));
-                registerType?.Invoke(trigg.pluginObj, new object[] { "mark", markingDele, null });
+                registerType?.Invoke(trigg.pluginObj, new object[] { "mark", markingDele, null });*/
 
-                /*triggPlugin.RegisterNamedCallback("DoTextCommand", DoTextCommand, null);
+                triggPlugin.RegisterNamedCallback("DoTextCommand", DoTextCommand, null);
                 triggPlugin.RegisterNamedCallback("DoWaymarks", DoWaymarks, null);
                 triggPlugin.RegisterNamedCallback("command", DoTextCommand, null);
                 triggPlugin.RegisterNamedCallback("place", DoWaymarks, null);
                 triggPlugin.RegisterNamedCallback("sendkey", DoSendKey, null);
-                triggPlugin.RegisterNamedCallback("mark", DoMarking, null);*/
+                triggPlugin.RegisterNamedCallback("mark", DoMarking, null);
             }
             catch (Exception ex) {
                 PluginUI.Log(ex.Message);

@@ -18,7 +18,7 @@ namespace PostNamazu
     public class PostNamazu : UserControl, IActPluginV1
     {
         public PostNamazu() {
-            AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
+            //AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
         }
 
         private static PostNamazuUi PluginUI;
@@ -296,10 +296,12 @@ namespace PostNamazu
 
         /// <summary>
         ///     AssemblyResolve事件的处理函数，该函数用来自定义程序集加载逻辑
+        ///     GrayMagic也打包了，已经不需要再从外部加载dll了
         /// </summary>
         /// <param name="sender">事件引发源</param>
         /// <param name="args">事件参数，从该参数中可以获取加载失败的程序集的名称</param>
         /// <returns></returns>
+        [Obsolete]
         private Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args) {
             var name = args.Name.Split(',')[0];
             //if (name != "GreyMagic") return null;

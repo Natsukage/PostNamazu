@@ -10,9 +10,9 @@ using System.Threading;
 using System.Windows.Forms;
 using Advanced_Combat_Tracker;
 using GreyMagic;
+using RainbowMage.OverlayPlugin;
 using Newtonsoft.Json;
 using PostNamazu.Models;
-
 namespace PostNamazu
 {
     public class PostNamazu : UserControl, IActPluginV1
@@ -25,6 +25,7 @@ namespace PostNamazu
         private Label _lblStatus; // The status label that appears in ACT's Plugin tab
 
         private HttpServer _httpServer;
+        private OverlayHandler _overlayHandler;
         private BackgroundWorker _processSwitcher;
 
         public static Process FFXIV;
@@ -60,6 +61,8 @@ namespace PostNamazu
                 ServerStart();
 
             TriggIntegration();
+            OverlayIntegration();
+
             PluginUI.ButtonStart.Click += ServerStart;
             PluginUI.ButtonStop.Click += ServerStop;
 
@@ -279,6 +282,31 @@ namespace PostNamazu
         }
 
         /// <summary>
+        /// OverlayPlugin集成
+        /// </summary>
+        private void OverlayIntegration()
+        {
+            /*
+            try
+            {
+                var container = Registry.GetContainer();
+                var registry = container.Resolve<Registry>();
+                // Register EventSource
+                _overlayHandler = new OverlayHandler(container);
+                registry.StartEventSource(_overlayHandler);
+
+                _overlayHandler.SetAction("command", DoTextCommand);
+                _overlayHandler.SetAction("place", DoWaymarks);
+                _overlayHandler.SetAction("sendkey", DoSendKey);
+                _overlayHandler.SetAction("mark", DoMarking);
+            }
+            catch (Exception ex)
+            {
+                PluginUI.Log(ex.Message);
+            }*/
+        }
+
+        /// <summary>
         ///     解析插件对应进程改变时触发，解除当前注入并注入新的游戏进程
         ///     目前由于解析插件的bug，ProcessChanged事件无法正常触发，暂时弃用。
         /// </summary>
@@ -316,7 +344,7 @@ namespace PostNamazu
             }
         }
         #endregion
-
+        
         #region TextCommand
 
         /// <summary>

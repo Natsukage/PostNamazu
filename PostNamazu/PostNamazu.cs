@@ -14,7 +14,7 @@ using Newtonsoft.Json;
 using PostNamazu.Models;
 namespace PostNamazu
 {
-    public class PostNamazu : UserControl, IActPluginV1
+    public class PostNamazu :  IActPluginV1
     {
         public PostNamazu() {
             //AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
@@ -40,12 +40,10 @@ namespace PostNamazu
         #region Init
         public void InitPlugin(TabPage pluginScreenSpace, Label pluginStatusText) {
             pluginScreenSpace.Text = "鲶鱼精邮差";
-            Dock = DockStyle.Fill; 
             _lblStatus = pluginStatusText; 
+            
+            PluginUI = new PostNamazuUi(pluginScreenSpace);
 
-            PluginUI = new PostNamazuUi();
-
-            PluginUI.InitializeComponent(pluginScreenSpace);
             PluginUI.Log($"插件版本:{Assembly.GetExecutingAssembly().GetName().Version}");
             
             _ffxivPlugin = GetFfxivPlugin();
@@ -60,8 +58,8 @@ namespace PostNamazu
 
             if (PluginUI.AutoStart)
                 ServerStart();
-            PluginUI.ButtonStart.Click += ServerStart;
-            PluginUI.ButtonStop.Click += ServerStop;
+            PluginUI.ui.ButtonStart.Click += ServerStart;
+            PluginUI.ui.ButtonStop.Click += ServerStop;
 
             TriggIntegration();
             OverlayIntegration();
@@ -93,12 +91,12 @@ namespace PostNamazu
         
         private void ServerStart(object sender = null, EventArgs e = null) {
             try {
-                _httpServer = new HttpServer((int)PluginUI.TextPort.Value);
+                _httpServer = new HttpServer((int)PluginUI.ui.TextPort.Value);
                 _httpServer.PostNamazuDelegate = DoAction;
                 _httpServer.OnException += OnException;
 
-                PluginUI.ButtonStart.Enabled = false;
-                PluginUI.ButtonStop.Enabled = true;
+                PluginUI.ui.ButtonStart.Enabled = false;
+                PluginUI.ui.ButtonStop.Enabled = true;
                 PluginUI.Log($"在{_httpServer.Port}端口启动监听");
             }
             catch (Exception ex) {
@@ -111,8 +109,8 @@ namespace PostNamazu
             _httpServer.PostNamazuDelegate = null;
             _httpServer.OnException -= OnException;
 
-            PluginUI.ButtonStart.Enabled = true;
-            PluginUI.ButtonStop.Enabled = false;
+            PluginUI.ui.ButtonStart.Enabled = true;
+            PluginUI.ui.ButtonStop.Enabled = false;
             PluginUI.Log("已停止监听");
         }
 
@@ -123,8 +121,8 @@ namespace PostNamazu
         private void OnException(Exception ex) {
             string errorMessage = $"无法在{_httpServer.Port}端口启动监听\n{ex.Message}";
 
-            PluginUI.ButtonStart.Enabled = true;
-            PluginUI.ButtonStop.Enabled = false;
+            PluginUI.ui.ButtonStart.Enabled = true;
+            PluginUI.ui.ButtonStop.Enabled = false;
 
             PluginUI.Log(errorMessage);
             MessageBox.Show(errorMessage);

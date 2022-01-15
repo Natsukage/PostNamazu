@@ -8,7 +8,7 @@ namespace PostNamazu.Models
 {
     public class SigScanner
     {
-        private Process process;
+        //private Process process;
 
         //private readonly ILogger _logger;
 

@@ -9,9 +9,8 @@ using System.Windows.Forms;
 
 namespace PostNamazu.Models
 {
-    public delegate void ReceivedRequestEventHandler(string payload);
     public delegate void OnExceptionEventHandler(Exception ex);
-
+    
     internal class HttpServer
     {
         private Thread _serverThread;
@@ -19,9 +18,8 @@ namespace PostNamazu.Models
 
         public int Port { get; private set; }
 
+        public Action<string, string> PostNamazuDelegate = null;
         public event OnExceptionEventHandler OnException;
-
-        private Dictionary<string, ReceivedRequestEventHandler> UrlBind = new Dictionary<string, ReceivedRequestEventHandler>();
 
         #region Init
         /// <summary>
@@ -112,7 +110,7 @@ namespace PostNamazu.Models
         {
             var payload = new StreamReader(context.Request.InputStream, Encoding.UTF8).ReadToEnd();
 
-            GetAction(context.Request.Url.AbsolutePath)?.Invoke(payload);
+            PostNamazuDelegate?.Invoke(TrimUrl(context.Request.Url.AbsolutePath), payload);
 
             var buf = Encoding.UTF8.GetBytes(payload);
             context.Response.ContentLength64 = buf.Length;
@@ -120,38 +118,8 @@ namespace PostNamazu.Models
             context.Response.StatusCode = (int)HttpStatusCode.OK;
             context.Response.OutputStream.Flush();
         }
-
-        /// <summary>
-        ///     设置指令与对应的方法委托
-        /// </summary>
-        /// <param name="url">通过url传递的指令类型</param>
-        /// <param name="action">对应指令的方法委托</param>
-        public void SetAction(string url, ReceivedRequestEventHandler action) {
-            url = url.Trim(new char[] { '/' }).ToLower();
-            UrlBind[url]= action;
-        }
-
-        /// <summary>
-        ///     获取指令对应的方法
-        /// </summary>
-        /// <param name="url">通过url传递的指令类型</param>
-        /// <returns>对应指令的委托方法</returns>
-        private ReceivedRequestEventHandler GetAction(string url) {
-            try {
-                url = url.Trim(new char[] { '/' }).ToLower();
-                return UrlBind[url];
-            }
-            catch {
-                throw new Exception($@"不支持的操作{url}");
-            }
-        }
-
-        /// <summary>
-        ///     清空绑定的委托列表
-        /// </summary>
-        public void ClearAction()
-        {
-            UrlBind.Clear();
+        public string TrimUrl(string url) {
+            return url.Trim(new char[] { '/' }).ToLower();
         }
 
 

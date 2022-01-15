@@ -12,10 +12,9 @@ using Advanced_Combat_Tracker;
 using GreyMagic;
 using Newtonsoft.Json;
 using PostNamazu.Models;
-
 namespace PostNamazu
 {
-    public class PostNamazu : UserControl, IActPluginV1
+    public class PostNamazu :  IActPluginV1
     {
         public PostNamazu() {
             //AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
@@ -24,44 +23,46 @@ namespace PostNamazu
         private static PostNamazuUi PluginUI;
         private Label _lblStatus; // The status label that appears in ACT's Plugin tab
 
-        private HttpServer _httpServer;
         private BackgroundWorker _processSwitcher;
 
+        private HttpServer _httpServer;
+        private OverlayHoster.Program _overlayHoster;
+        private TriggerHoster.Program _triggerHoster;
+
+        private FFXIV_ACT_Plugin.FFXIV_ACT_Plugin _ffxivPlugin;
         public static Process FFXIV;
         private static ExternalProcessMemory Memory;
-        private FFXIV_ACT_Plugin.FFXIV_ACT_Plugin _ffxivPlugin;
-        private TriggernometryProxy.ProxyPlugin triggPlugin;
-
         private IntPtr _entrancePtr;
         private Offsets Offsets;
-        private WayMarks tempMarks;
+        
+        private Dictionary<string, Action<string>> CmdBind = new Dictionary<string, Action<string>>();
 
         #region Init
         public void InitPlugin(TabPage pluginScreenSpace, Label pluginStatusText) {
             pluginScreenSpace.Text = "鲶鱼精邮差";
+            _lblStatus = pluginStatusText; 
+            
+            PluginUI = new PostNamazuUi(pluginScreenSpace);
 
-            PluginUI = new PostNamazuUi();
-
-            PluginUI.InitializeComponent(pluginScreenSpace);
             PluginUI.Log($"插件版本:{Assembly.GetExecutingAssembly().GetName().Version}");
-
-            Dock = DockStyle.Fill; // Expand the UserControl to fill the tab's client space
-            _lblStatus = pluginStatusText; // Hand the status label's reference to our local var
-
+            
             _ffxivPlugin = GetFfxivPlugin();
+
+            InitializeActions();
 
             //目前解析插件有bug，在特定情况下无法正常触发ProcessChanged事件。因此只能通过后台线程实时监控
             //_ffxivPlugin.DataSubscription.ProcessChanged += ProcessChanged;
-
             _processSwitcher = new BackgroundWorker { WorkerSupportsCancellation = true };
             _processSwitcher.DoWork += ProcessSwitcher;
             _processSwitcher.RunWorkerAsync();
+
             if (PluginUI.AutoStart)
                 ServerStart();
+            PluginUI.ui.ButtonStart.Click += ServerStart;
+            PluginUI.ui.ButtonStop.Click += ServerStop;
 
             TriggIntegration();
-            PluginUI.ButtonStart.Click += ServerStart;
-            PluginUI.ButtonStop.Click += ServerStop;
+            OverlayIntegration();
 
             _lblStatus.Text = "鲶鱼精邮差已启动";
         }
@@ -75,17 +76,27 @@ namespace PostNamazu
             _lblStatus.Text = "鲶鱼精邮差已退出";
         }
 
+        /// <summary>
+        ///     注册命令
+        /// </summary>
+        public void InitializeActions()
+        {
+            SetAction("DoTextCommand", DoTextCommand);
+            SetAction("command", DoTextCommand);
+            SetAction("DoWaymarks", DoWaymarks);
+            SetAction("place", DoWaymarks);
+            SetAction("sendkey", DoSendKey);
+            SetAction("mark", DoMarking);
+        }
+        
         private void ServerStart(object sender = null, EventArgs e = null) {
             try {
-                _httpServer = new HttpServer((int)PluginUI.TextPort.Value);
-                _httpServer.SetAction("command", DoTextCommand);
-                _httpServer.SetAction("place", DoWaymarks);
-                _httpServer.SetAction("sendkey", DoSendKey);
-                _httpServer.SetAction("mark", DoMarking);
+                _httpServer = new HttpServer((int)PluginUI.ui.TextPort.Value);
+                _httpServer.PostNamazuDelegate = DoAction;
                 _httpServer.OnException += OnException;
 
-                PluginUI.ButtonStart.Enabled = false;
-                PluginUI.ButtonStop.Enabled = true;
+                PluginUI.ui.ButtonStart.Enabled = false;
+                PluginUI.ui.ButtonStop.Enabled = true;
                 PluginUI.Log($"在{_httpServer.Port}端口启动监听");
             }
             catch (Exception ex) {
@@ -95,13 +106,14 @@ namespace PostNamazu
 
         private void ServerStop(object sender = null, EventArgs e = null) {
             _httpServer.Stop();
-            _httpServer.ClearAction();
+            _httpServer.PostNamazuDelegate = null;
             _httpServer.OnException -= OnException;
 
-            PluginUI.ButtonStart.Enabled = true;
-            PluginUI.ButtonStop.Enabled = false;
+            PluginUI.ui.ButtonStart.Enabled = true;
+            PluginUI.ui.ButtonStop.Enabled = false;
             PluginUI.Log("已停止监听");
         }
+
         /// <summary>
         /// 委托给HttpServer类的异常处理
         /// </summary>
@@ -109,14 +121,12 @@ namespace PostNamazu
         private void OnException(Exception ex) {
             string errorMessage = $"无法在{_httpServer.Port}端口启动监听\n{ex.Message}";
 
-            PluginUI.ButtonStart.Enabled = true;
-            PluginUI.ButtonStop.Enabled = false;
+            PluginUI.ui.ButtonStart.Enabled = true;
+            PluginUI.ui.ButtonStop.Enabled = false;
 
             PluginUI.Log(errorMessage);
             MessageBox.Show(errorMessage);
         }
-
-
 
         /// <summary>
         ///     对当前解析插件对应的游戏进程进行注入
@@ -149,7 +159,7 @@ namespace PostNamazu
         }
 
         /// <summary>
-        ///     取得解析插件的进程（从獭爹那里偷来的）
+        ///     取得解析插件（从獭爹那里偷来的）
         /// </summary>
         /// <returns></returns>
         private FFXIV_ACT_Plugin.FFXIV_ACT_Plugin GetFfxivPlugin() {
@@ -160,6 +170,15 @@ namespace PostNamazu
                      actPluginData.lblPluginStatus.Text.ToUpper().Contains("FFXIV_ACT_Plugin Started.".ToUpper())))  //国际服新版本
                     ffxivActPlugin = (FFXIV_ACT_Plugin.FFXIV_ACT_Plugin)actPluginData.pluginObj;
             return ffxivActPlugin ?? throw new Exception("找不到FFXIV解析插件，请确保其加载顺序位于鲶鱼精邮差之前。");
+        }
+
+        /// <summary>
+        ///     取得解析插件对应的游戏进程
+        /// </summary>
+        /// <returns>解析插件当前对应进程</returns>
+        private Process GetFFXIVProcess()
+        {
+            return _ffxivPlugin.DataRepository.GetCurrentFFXIVProcess();
         }
 
         /// <summary>
@@ -192,14 +211,7 @@ namespace PostNamazu
 
             return true;
         }
-
-        /// <summary>
-        ///     获取当前FFXIV解析插件的活动进程
-        /// </summary>
-        /// <returns>解析插件当前对应进程</returns>
-        private Process GetFFXIVProcess() {
-            return _ffxivPlugin.DataRepository.GetCurrentFFXIVProcess();
-        }
+        
 
         /// <summary>
         ///     代替ProcessChanged委托，手动循环检测当前活动进程并进行注入。
@@ -228,43 +240,19 @@ namespace PostNamazu
         }
 
         /// <summary>
-        /// TriggerNemotry集成
+        /// TriggerNometry集成
         /// </summary>
         private void TriggIntegration() {
             try {
-                var trigg = ActGlobals.oFormActMain.ActPlugins.FirstOrDefault(x => x.pluginFile.Name.ToUpper().Contains("Triggernometry".ToUpper()));
-                triggPlugin = (TriggernometryProxy.ProxyPlugin)trigg.pluginObj;
-                /*
-                if (trigg == null || trigg.pluginObj == null)
-                    throw new Exception("找不到Triggernometry插件，请确保其加载顺序位于鲶鱼精邮差之前。");
-
-                var triggType = trigg.pluginObj.GetType();
-                var deleType = triggType.GetNestedType("CustomCallbackDelegate");
-                if (deleType == null)
-                    throw new Exception($"{DateTime.Now.Year}年了，害搁这用老版本触发器呢？");
-
-                var registerType = triggType.GetMethod("RegisterNamedCallback");
-
-                var textCommandDele = Delegate.CreateDelegate(deleType, this, typeof(PostNamazu).GetMethod("DoTextCommand"));
-                registerType?.Invoke(trigg.pluginObj, new object[] { "DoTextCommand", textCommandDele, null });
-                registerType?.Invoke(trigg.pluginObj, new object[] { "command", textCommandDele, null });
-
-                var wayMarkDele = Delegate.CreateDelegate(deleType, this, typeof(PostNamazu).GetMethod("DoWaymarks"));
-                registerType?.Invoke(trigg.pluginObj, new object[] { "DoWaymarks", wayMarkDele, null });
-                registerType?.Invoke(trigg.pluginObj, new object[] { "place", wayMarkDele, null });
-
-                var sendKeyDele = Delegate.CreateDelegate(deleType, this, typeof(PostNamazu).GetMethod("DoSendKey"));
-                registerType?.Invoke(trigg.pluginObj, new object[] { "sendkey", sendKeyDele, null });
-
-                var markingDele = Delegate.CreateDelegate(deleType, this, typeof(PostNamazu).GetMethod("DoMarking"));
-                registerType?.Invoke(trigg.pluginObj, new object[] { "mark", markingDele, null });*/
-
-                triggPlugin.RegisterNamedCallback("DoTextCommand", DoTextCommand, null);
-                triggPlugin.RegisterNamedCallback("DoWaymarks", DoWaymarks, null);
-                triggPlugin.RegisterNamedCallback("command", DoTextCommand, null);
-                triggPlugin.RegisterNamedCallback("place", DoWaymarks, null);
-                triggPlugin.RegisterNamedCallback("sendkey", DoSendKey, null);
-                triggPlugin.RegisterNamedCallback("mark", DoMarking, null);
+                var plugin = ActGlobals.oFormActMain.ActPlugins.FirstOrDefault(x => x.pluginFile.Name.ToUpper().Contains("Triggernometry".ToUpper()));
+                if (plugin?.pluginObj == null)
+                {
+                    PluginUI.Log("没有找到Triggernometry");
+                    return;
+                }
+                PluginUI.Log("绑定Triggernometry");
+                _triggerHoster = new TriggerHoster.Program(plugin.pluginObj) { PostNamazuDelegate = DoAction };
+                _triggerHoster.Init(CmdBind.Keys.ToArray());
             }
             catch (Exception ex) {
                 PluginUI.Log(ex.Message);
@@ -272,10 +260,28 @@ namespace PostNamazu
         }
 
         /// <summary>
-        /// 取消TriggerNemotry集成，不过不取消似乎也没啥问题
+        /// OverlayPlugin集成
         /// </summary>
-        private void TriggPartition() {
-            //triggPlugin.UnregisterNamedCallback();
+        private void OverlayIntegration()
+        {
+            try
+            {
+                var plugin = ActGlobals.oFormActMain.ActPlugins.FirstOrDefault(x => x.pluginFile.Name.ToUpper().Contains("OverlayPlugin".ToUpper()));
+                if (plugin?.pluginObj == null)
+                {
+                    PluginUI.Log("没有找到OverlayPlugin");
+                }
+                else
+                {
+                    PluginUI.Log("绑定OverlayPlugin");
+                    _overlayHoster = new OverlayHoster.Program { PostNamazuDelegate = DoAction };
+                    _overlayHoster.Init();
+                }
+            }
+            catch (Exception ex)
+            {
+                PluginUI.Log(ex.Message);
+            }
         }
 
         /// <summary>
@@ -317,12 +323,59 @@ namespace PostNamazu
         }
         #endregion
 
-        #region TextCommand
+        #region Delegate
 
         /// <summary>
-        ///     在游戏进程中执行给出的指令
+        ///     执行指令对应的方法
         /// </summary>
-        /// <param name="command">需要执行的指令</param>
+        /// <param name="command"></param>
+        /// <param name="payload"></param>
+        public void DoAction(string command, string payload)
+        {
+            GetAction(command)(payload);
+        }
+
+        /// <summary>
+        ///     设置指令与对应的方法
+        /// </summary>
+        /// <param name="command">指令类型</param>
+        /// <param name="action">对应指令的方法委托</param>
+        public void SetAction(string command, Action<string> action)
+        {
+            CmdBind[command] = action;
+        }
+
+        /// <summary>
+        ///     获取指令对应的方法
+        /// </summary>
+        /// <param name="command">指令类型</param>
+        /// <returns>对应指令的委托方法</returns>
+        private Action<string> GetAction(string command)
+        {
+            try
+            {
+                return CmdBind[command];
+            }
+            catch
+            {
+                throw new Exception($@"不支持的操作{command}");
+            }
+        }
+
+        /// <summary>
+        ///     清空绑定的委托列表
+        /// </summary>
+        public void ClearAction()
+        {
+            CmdBind.Clear();
+        }
+        #endregion
+
+        #region TextCommand
+        /// <summary>
+        ///     执行给出的文本指令
+        /// </summary>
+        /// <param name="command">文本指令</param>
         private void DoTextCommand(string command) {
             if (FFXIV == null) {
                 PluginUI.Log("执行错误：接收到指令，但是没有对应的游戏进程");
@@ -358,17 +411,13 @@ namespace PostNamazu
                 if (flag) Monitor.Exit(assemblyLock);
             }
         }
-
-        public void DoTextCommand(object _, string command) {
-            //MessageBox.Show(command);
-            DoTextCommand(command);
-        }
         #endregion
 
         #region WayMarks
+        private WayMarks tempMarks; //暂存场地标点
 
         /// <summary>
-        ///     在游戏进程中进行场地标点
+        ///     场地标点
         /// </summary>
         /// <param name="waymarks">标点合集对象</param>
         private void DoWaymarks(WayMarks waymarks) {
@@ -382,7 +431,7 @@ namespace PostNamazu
             WriteWaymark(waymarks.Four, 7);
         }
         /// <summary>
-        ///     在游戏进程中进行场地标点
+        ///     场地标点
         /// </summary>
         /// <param name="waymarksStr">标点合集序列化Json字符串</param>
         private void DoWaymarks(string waymarksStr) {
@@ -404,15 +453,9 @@ namespace PostNamazu
                 default:
                     var waymarks = JsonConvert.DeserializeObject<WayMarks>(waymarksStr);
                     PluginUI.Log(waymarksStr);
-                    PluginUI.Log("开始标记");
                     DoWaymarks(waymarks);
                     break;
             }
-        }
-
-        public void DoWaymarks(object _, string command) {
-            //MessageBox.Show(command);
-            DoWaymarks(command);
         }
 
         /// <summary>
@@ -525,10 +568,6 @@ namespace PostNamazu
                 PluginUI.Log($"发送按键失败：{ex}");
             }
         }
-        public void DoSendKey(object _, string command) {
-            //MessageBox.Show(command);
-            DoSendKey(command);
-        }
 
         public static void SendKeycode(int keycode) {
             SendMessageToWindow(WinAPI.WM_KEYDOWN, keycode, 0);
@@ -560,8 +599,7 @@ namespace PostNamazu
 
             if (dic.ContainsKey("MarkType")) {
                 var MarkTypeStr = dic["MarkType"];
-                var markingType = MarkingType.attack1;
-                if (!Enum.TryParse < MarkingType > (MarkTypeStr, true,out markingType)) {
+                if (!Enum.TryParse < MarkingType > (MarkTypeStr, true,out var markingType)) {
                     PluginUI.Log($"未知的标记类型:{MarkTypeStr}");
                     return;
                 }
@@ -612,10 +650,6 @@ namespace PostNamazu
                 if (flag) Monitor.Exit(assemblyLock);
             }
         }
-
-        public void DoMarking(object _, string command) {
-            DoMarking(command);
-        }
         public static Dictionary<string, string> ParseQueryString(string url) {
             if (string.IsNullOrWhiteSpace(url)) {
                 throw new ArgumentNullException("字符串为空");
@@ -636,6 +670,5 @@ namespace PostNamazu
             return dic;
         }
         #endregion
-
     }
 }

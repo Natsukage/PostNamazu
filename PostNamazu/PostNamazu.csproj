@@ -48,6 +48,7 @@
     </Reference>
     <Reference Include="Costura, Version=5.7.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Costura.Fody.5.7.0\lib\netstandard1.0\Costura.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="FFXIV_ACT_Plugin">
       <HintPath>..\Lib\FFXIV_ACT_Plugin.dll</HintPath>
@@ -71,26 +72,24 @@
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="Triggernometry">
-      <HintPath>..\Lib\Triggernometry.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Common\HTTPServer.cs" />
     <Compile Include="Common\MemHelper.cs" />
+    <Compile Include="Controls\UIControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\UIControl.Designer.cs">
+      <DependentUpon>UIControl.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\MarkType.cs" />
     <Compile Include="Models\Offsets.cs" />
     <Compile Include="Common\SigScanner.cs" />
     <Compile Include="Common\SizeCache.cs" />
     <Compile Include="Models\Waymark.cs" />
     <Compile Include="Models\WayMarks.cs" />
-    <Compile Include="PostNamazu.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="PostNamazuUI.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
+    <Compile Include="PostNamazu.cs" />
+    <Compile Include="PostNamazuUI.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WinAPI.cs" />
   </ItemGroup>
@@ -105,6 +104,17 @@
     <EmbeddedResource Include="Costura64\GreyMagic.dll" />
     <Content Include="FodyWeavers.xml" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PostNamazu.OverlayHoster\PostNamazu.OverlayHoster.csproj">
+      <Project>{b964706f-65ec-4a01-9467-7cde1682cc6c}</Project>
+      <Name>PostNamazu.OverlayHoster</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\PostNamazu.TriggerHoster\PostNamazu.TriggerHoster.csproj">
+      <Project>{0fd4be42-da2c-4b92-8d16-89bac0652da9}</Project>
+      <Name>PostNamazu.TriggerHoster</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\Fody.6.6.0\build\Fody.targets" Condition="Exists('..\packages\Fody.6.6.0\build\Fody.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

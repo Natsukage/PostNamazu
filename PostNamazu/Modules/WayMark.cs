@@ -36,6 +36,10 @@ namespace PostNamazu.Modules
             WriteWaymark(waymarks.Three, 6);
             WriteWaymark(waymarks.Four, 7);
         }
+
+        //狗屎兼容
+        [Command("DoWaymarks")]
+        public void DoWaymarks_old(string waymarksStr)=>DoWaymarks(waymarksStr);
         /// <summary>
         ///     场地标点
         /// </summary>
@@ -102,7 +106,7 @@ namespace PostNamazu.Modules
                 PluginUI.Log("暂存当前标点");
             }
             catch (Exception ex) {
-                PluginUI.Log("保存标记错误：" + ex.Message);
+                throw new Exception("保存标记错误：" + ex.Message);
             }
 
         }

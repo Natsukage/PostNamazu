@@ -1,4 +1,5 @@
-﻿using PostNamazu.Attributes;
+﻿using Newtonsoft.Json;
+using PostNamazu.Attributes;
 using PostNamazu.Models;
 using PostNamazu.Modules;
 using System;
@@ -25,7 +26,7 @@ namespace PostNamazu.Modules
             //char __fastcall sub_1407A6A60(__int64 g_MarkingController, __int64 MarkType, __int64 ActorID)
             MarkingController = SigScanner.GetStaticAddressFromSig("48 8B 94 24 ? ? ? ? 48 8D 0D ? ? ? ? 41 B0 01");
         }
-
+        //反正没人用,不如重构
         [Command("mark")]
         public void DoMarking(string command)
         {
@@ -37,52 +38,33 @@ namespace PostNamazu.Modules
             if (command == "")
                 throw new Exception("指令为空");
 
-            var dic = ParseQueryString(command);
-
-            PluginUI.Log(command);
-
-            bool localOnly = dic.ContainsKey("Local") && bool.Parse(dic["Local"]);
-
-            if (dic.ContainsKey("MarkType")) {
-                var MarkTypeStr = dic["MarkType"];
-                if (!Enum.TryParse<MarkingType>(MarkTypeStr, true, out var markingType)) {
-                    PluginUI.Log($"未知的标记类型:{MarkTypeStr}");
-                    return;
-                }
-                if (dic.ContainsKey("ActorID")) {
-                    var ActorIDStr = dic["ActorID"];
-                    var ActorID = UInt32.Parse(ActorIDStr, NumberStyles.HexNumber);
-                    DoMarkingByActorID(ActorID, markingType, localOnly);
-                }
-                else if (dic.ContainsKey("Name")) {
-                    var Name = dic["Name"];
-                    GetActorIDByName(Name, markingType, localOnly);
-                }
-                else {
-                    PluginUI.Log("错误指令");
-                }
+            var mark=JsonConvert.DeserializeObject<Marking>(command);
+            if (mark.MarkType == null) {
+                throw new Exception("标记错误");
+            }
+            uint actorID = 0xE000000;
+            if (mark.ActorID == null) {
+                actorID = GetActorIDByName(mark.Name);
             }
             else {
-                PluginUI.Log("错误指令");
-            };
-            return;
+                actorID= mark.ActorID.Value;
+            }
+            DoMarkingByActorID(actorID,mark.MarkType.Value,mark.LocalOnly);
         }
-        private void GetActorIDByName(string Name, MarkingType markingType, bool localOnly = false)
+        private uint GetActorIDByName(string Name)
         {
             var combatant = _ffxivPlugin.DataRepository.GetCombatantList().FirstOrDefault(i => i.Name != null && i.ID != 0xE0000000 && i.Name.Equals(Name));
             if (combatant == null) {
-                PluginUI.Log($"未能找到{Name}");
-                return;
+                throw new Exception($"未能找到{Name}");
             }
+            return combatant.ID;
             //PluginUI.Log($"BNpcID={combatant.BNpcNameID},ActorID={combatant.ID:X},markingType={markingType}");
-            DoMarkingByActorID(combatant.ID, markingType, localOnly);
         }
-        private void DoMarkingByActorID(uint ActorID, MarkingType markingType, bool localOnly = false)
+        private void DoMarkingByActorID(uint ActorID, MarkType markingType, bool localOnly = false)
         {
             var combatant = _ffxivPlugin.DataRepository.GetCombatantList().FirstOrDefault(i => i.ID == ActorID);
             if (combatant == null) {
-                PluginUI.Log($"未能找到{ActorID}");
-                return;
+                throw new Exception($"未能找到{ActorID}");
             }
             PluginUI.Log($"ActorID={ActorID:X},markingType={(int)markingType},LocalOnly={localOnly}");
             var assemblyLock = Memory.Executor.AssemblyLock;
@@ -97,27 +79,6 @@ namespace PostNamazu.Modules
             finally {
                 if (flag) Monitor.Exit(assemblyLock);
             }
-        }
-
-        private static Dictionary<string, string> ParseQueryString(string url)
-        {
-            if (string.IsNullOrWhiteSpace(url)) {
-                throw new ArgumentNullException("字符串为空");
-            }
-            if (string.IsNullOrWhiteSpace(url)) {
-                return new Dictionary<string, string>();
-            }
-            var dic = url
-                    //2.通过&划分各个参数
-                    .Split(new char[] { '&' }, StringSplitOptions.RemoveEmptyEntries)
-                    //3.通过=划分参数key和value,且保证只分割第一个=字符
-                    .Select(param => param.Split(new char[] { '=' }, 2, StringSplitOptions.RemoveEmptyEntries))
-                    //4.通过相同的参数key进行分组
-                    .GroupBy(part => part[0], part => part.Length > 1 ? part[1] : string.Empty)
-                    //5.将相同key的value以,拼接
-                    .ToDictionary(group => group.Key, group => string.Join(",", group));
-
-            return dic;
         }
     }
 }

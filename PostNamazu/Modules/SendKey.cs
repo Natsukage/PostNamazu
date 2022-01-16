@@ -24,7 +24,7 @@ namespace PostNamazu.Modules
                 SendKeycode(keycode);
             }
             catch (Exception ex) {
-                Log($"发送按键失败：{ex}");
+                throw new Exception($"发送按键失败：{ex}");
             }
         }
 

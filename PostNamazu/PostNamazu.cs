@@ -359,7 +359,12 @@ namespace PostNamazu
         /// <param name="payload"></param>
         public void DoAction(string command, string payload)
         {
-            GetAction(command)(payload);
+            try { 
+                GetAction(command)(payload); 
+            }
+            catch (Exception ex) {
+                PluginUI.Log(ex.ToString());
+            }
         }
 
         /// <summary>

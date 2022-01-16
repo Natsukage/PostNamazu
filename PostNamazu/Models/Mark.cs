@@ -2,6 +2,13 @@
 
 namespace PostNamazu.Models
 {
+    public class Mark { 
+        public string Name { get; set; }
+        public int ActorID { get; set; }
+        public MarkingType MarkingType { get; set; }
+        public bool LocalOnly =true;
+    }
+
     public enum MarkingType : byte
     {
         attack1 = 1,

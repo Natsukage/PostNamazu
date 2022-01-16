@@ -1,27 +1,23 @@
-﻿using Advanced_Combat_Tracker;
-using System;
-using System.Drawing;
+﻿using System;
 using System.IO;
 using System.Text;
 using System.Windows.Forms;
 using System.Xml;
-using PostNamazu.Controls;
+using Advanced_Combat_Tracker;
 
 namespace PostNamazu
 {
-    class PostNamazuUi
+    public partial class PostNamazuUi : UserControl
     {
-        public UIControl ui = new UIControl();
-        public bool AutoStart => ui.CheckAutoStart.Checked;
-        private static readonly string SettingsFile = Path.Combine(ActGlobals.oFormActMain.AppDataFolder.FullName, "Config\\PostNamazu.config.xml");
-
-        public PostNamazuUi(TabPage pluginScreenSpace)
+        public PostNamazuUi()
         {
-            pluginScreenSpace.Controls.Add(ui);
+            InitializeComponent();
             LoadSettings();
-            ui.ButtonCopyProblematic.Click += cmdCopyProblematic_Click;
-            ui.ButtonClearMessage.Click += cmdClearMessages_Click;
+            ButtonCopyProblematic.Click += cmdCopyProblematic_Click;
+            ButtonClearMessage.Click += cmdClearMessages_Click;
         }
+        public bool AutoStart => CheckAutoStart.Checked;
+        private static readonly string SettingsFile = Path.Combine(ActGlobals.oFormActMain.AppDataFolder.FullName, "Config\\PostNamazu.config.xml");
 
         public void Log(string log)
         {
@@ -36,7 +32,7 @@ namespace PostNamazu
         public void cmdCopyProblematic_Click(object sender, EventArgs e)
         {
             StringBuilder stringBuilder = new StringBuilder();
-            foreach (object item in ui.lstMessages.Items)
+            foreach (object item in lstMessages.Items)
             {
                 stringBuilder.AppendLine((item ?? "").ToString());
             }
@@ -48,7 +44,7 @@ namespace PostNamazu
 
         public void cmdClearMessages_Click(object sender, EventArgs e)
         {
-            ui.lstMessages.Items.Clear();
+            lstMessages.Items.Clear();
         }
 
         internal static void RunOnACTUIThread(Action code)
@@ -67,12 +63,12 @@ namespace PostNamazu
         {
             RunOnACTUIThread(delegate
             {
-                if (ui.lstMessages.Items.Count > 500)
-                    ui.lstMessages.Items.RemoveAt(0);
-                bool scroll = ui.lstMessages.TopIndex == ui.lstMessages.Items.Count - ui.lstMessages.Height / ui.lstMessages.ItemHeight;
-                ui.lstMessages.Items.Add($"[{DateTime.Now:HH:mm:ss}] {message}");
+                if (lstMessages.Items.Count > 500)
+                    lstMessages.Items.RemoveAt(0);
+                bool scroll = lstMessages.TopIndex == lstMessages.Items.Count - lstMessages.Height / lstMessages.ItemHeight;
+                lstMessages.Items.Add($"[{DateTime.Now:HH:mm:ss}] {message}");
                 if (scroll)
-                    ui.lstMessages.TopIndex = ui.lstMessages.Items.Count - ui.lstMessages.Height / ui.lstMessages.ItemHeight;
+                    lstMessages.TopIndex = lstMessages.Items.Count - lstMessages.Height / lstMessages.ItemHeight;
             });
         }
 
@@ -86,8 +82,8 @@ namespace PostNamazu
                 {
                     xdo.Load(SettingsFile);
                     XmlNode head = xdo.SelectSingleNode("Config");
-                    ui.TextPort.Text = head?.SelectSingleNode("Port")?.InnerText;
-                    ui.CheckAutoStart.Checked = bool.Parse(head?.SelectSingleNode("AutoStart")?.InnerText ?? "false");
+                    TextPort.Text = head?.SelectSingleNode("Port")?.InnerText;
+                    CheckAutoStart.Checked = bool.Parse(head?.SelectSingleNode("AutoStart")?.InnerText ?? "false");
                 }
                 catch (Exception)
                 {
@@ -105,8 +101,8 @@ namespace PostNamazu
             XmlTextWriter xWriter = new XmlTextWriter(fs, Encoding.UTF8) { Formatting = Formatting.Indented, Indentation = 1, IndentChar = '\t' };
             xWriter.WriteStartDocument(true);
             xWriter.WriteStartElement("Config");    // <Config>
-            xWriter.WriteElementString("Port", ui.TextPort.Text);
-            xWriter.WriteElementString("AutoStart", ui.CheckAutoStart.Checked.ToString());
+            xWriter.WriteElementString("Port", TextPort.Text);
+            xWriter.WriteElementString("AutoStart", CheckAutoStart.Checked.ToString());
             xWriter.WriteEndElement();  // </Config>
             xWriter.WriteEndDocument(); // Tie up loose ends (shouldn't be any)
             xWriter.Flush();    // Flush the file buffer to disk

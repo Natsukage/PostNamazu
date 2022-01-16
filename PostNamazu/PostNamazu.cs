@@ -51,7 +51,8 @@ namespace PostNamazu
             pluginScreenSpace.Text = "鲶鱼精邮差";
             _lblStatus = pluginStatusText;
 
-            PluginUI = new PostNamazuUi(pluginScreenSpace);
+            PluginUI = new PostNamazuUi();
+            pluginScreenSpace.Controls.Add(PluginUI);
 
             PluginUI.Log($"插件版本:{Assembly.GetExecutingAssembly().GetName().Version}");
 
@@ -66,8 +67,8 @@ namespace PostNamazu
 
             if (PluginUI.AutoStart)
                 ServerStart();
-            PluginUI.ui.ButtonStart.Click += ServerStart;
-            PluginUI.ui.ButtonStop.Click += ServerStop;
+            PluginUI.ButtonStart.Click += ServerStart;
+            PluginUI.ButtonStop.Click += ServerStop;
 
             InitializeActions();
             TriggIntegration();
@@ -115,12 +116,12 @@ namespace PostNamazu
         private void ServerStart(object sender = null, EventArgs e = null)
         {
             try {
-                _httpServer = new HttpServer((int)PluginUI.ui.TextPort.Value);
+                _httpServer = new HttpServer((int)PluginUI.TextPort.Value);
                 _httpServer.PostNamazuDelegate = DoAction;
                 _httpServer.OnException += OnException;
 
-                PluginUI.ui.ButtonStart.Enabled = false;
-                PluginUI.ui.ButtonStop.Enabled = true;
+                PluginUI.ButtonStart.Enabled = false;
+                PluginUI.ButtonStop.Enabled = true;
                 PluginUI.Log($"在{_httpServer.Port}端口启动监听");
             }
             catch (Exception ex) {
@@ -134,8 +135,8 @@ namespace PostNamazu
             _httpServer.PostNamazuDelegate = null;
             _httpServer.OnException -= OnException;
 
-            PluginUI.ui.ButtonStart.Enabled = true;
-            PluginUI.ui.ButtonStop.Enabled = false;
+            PluginUI.ButtonStart.Enabled = true;
+            PluginUI.ButtonStop.Enabled = false;
             PluginUI.Log("已停止监听");
         }
 
@@ -147,8 +148,8 @@ namespace PostNamazu
         {
             string errorMessage = $"无法在{_httpServer.Port}端口启动监听\n{ex.Message}";
 
-            PluginUI.ui.ButtonStart.Enabled = true;
-            PluginUI.ui.ButtonStop.Enabled = false;
+            PluginUI.ButtonStart.Enabled = true;
+            PluginUI.ButtonStop.Enabled = false;
 
             PluginUI.Log(errorMessage);
             MessageBox.Show(errorMessage);

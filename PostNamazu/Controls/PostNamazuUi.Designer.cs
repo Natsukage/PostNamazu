@@ -1,6 +1,6 @@
-﻿namespace PostNamazu.Controls
+﻿namespace PostNamazu
 {
-    partial class UIControl
+    partial class PostNamazuUi
     {
         /// <summary> 
         /// 必需的设计器变量。

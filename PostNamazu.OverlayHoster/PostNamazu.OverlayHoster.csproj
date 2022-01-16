@@ -14,7 +14,7 @@
     </Reference>
     <Reference Include="OverlayPlugin.Common">
       <HintPath>..\Lib\SDK\OverlayPlugin.Common.dll</HintPath>
-      <Private>False</Private>
+      <Private>True</Private>
       <CopyLocal>False</CopyLocal>
     </Reference>
     <Reference Include="OverlayPlugin.Core">

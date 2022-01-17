@@ -31,7 +31,7 @@ namespace PostNamazu.Modules
                 Log(ex.ToString());
                 isReady = false;
             }
-            Log("初始化完成");
+            //Log("初始化完成");
             if (_ffxivPlugin != null && FFXIV != null && Memory != null) {
                 isReady = true;
             }

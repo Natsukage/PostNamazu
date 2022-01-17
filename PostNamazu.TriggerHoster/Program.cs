@@ -13,7 +13,7 @@ namespace PostNamazu.TriggerHoster
         public Action<string, string> PostNamazuDelegate = null;
         public ProxyPlugin _triggPlugin;
 
-        public List<int> TriggCallbackId = new List<int>();
+        public List<int> TriggCallbackId = new ();
 
         public Program(IActPluginV1 plugin)
         {
@@ -23,6 +23,10 @@ namespace PostNamazu.TriggerHoster
         {
             foreach (string command in commands)
                 TriggCallbackId.Add(_triggPlugin.RegisterNamedCallback(command, delegate (object _, string payload) { PostNamazuDelegate(command, payload); }, null));
+        }
+        public void DeInit()
+        {
+            ClearAction();
         }
         public void ClearAction()
         {

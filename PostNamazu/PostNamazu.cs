@@ -82,6 +82,8 @@ namespace PostNamazu
             //_ffxivPlugin.DataSubscription.ProcessChanged -= ProcessChanged;
             if (_httpServer != null) ServerStop();
             _processSwitcher.CancelAsync();
+            _overlayHoster.DeInit();
+            _triggerHoster.DeInit();
             Detach();
             PluginUI.SaveSettings();
             _lblStatus.Text = "鲶鱼精邮差已退出";

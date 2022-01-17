@@ -80,12 +80,15 @@ namespace PostNamazu
         public void DeInitPlugin()
         {
             //_ffxivPlugin.DataSubscription.ProcessChanged -= ProcessChanged;
-            if (_httpServer != null) ServerStop();
-            _processSwitcher.CancelAsync();
+            PluginUI.SaveSettings();
+            Detach();
             _overlayHoster.DeInit();
             _triggerHoster.DeInit();
-            Detach();
-            PluginUI.SaveSettings();
+            if (_httpServer != null) ServerStop();
+            _processSwitcher.CancelAsync();
+
+            
+            
             _lblStatus.Text = "鲶鱼精邮差已退出";
         }
 

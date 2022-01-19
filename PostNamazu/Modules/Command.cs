@@ -30,16 +30,11 @@ namespace PostNamazu.Actions
             ModuleOffset = SigScanner.ReadInt32(ModuleOffsetPtr);
         }
 
-
-        //狗屎兼容性
-        [Command("DoTextCommand")]
-        public void DoTextCommand_old(string command) => DoTextCommand(command);
-
         /// <summary>
         ///     执行给出的文本指令
         /// </summary>
         /// <param name="command">文本指令</param>
-        [Command("command")]
+        [Command("command"), Command("DoTextCommand")]
         public void DoTextCommand(string command)
         {
             if (!isReady) {

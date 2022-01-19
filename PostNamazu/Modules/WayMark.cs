@@ -36,15 +36,11 @@ namespace PostNamazu.Modules
             WriteWaymark(waymarks.Three, 6);
             WriteWaymark(waymarks.Four, 7);
         }
-
-        //狗屎兼容
-        [Command("DoWaymarks")]
-        public void DoWaymarks_old(string waymarksStr)=>DoWaymarks(waymarksStr);
         /// <summary>
         ///     场地标点
         /// </summary>
         /// <param name="waymarksStr">标点合集序列化Json字符串</param>
-        [Command("place")]
+        [Command("place"), Command("DoWaymarks")]
         public void DoWaymarks(string waymarksStr)
         {
             if (!isReady) {

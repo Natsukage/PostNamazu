@@ -119,7 +119,7 @@ namespace PostNamazu.Models
             context.Response.OutputStream.Flush();
         }
         public string TrimUrl(string url) {
-            return url.Trim(new char[] { '/' }).ToLower();
+            return url.Trim(new char[] { '/' });
         }
 
 

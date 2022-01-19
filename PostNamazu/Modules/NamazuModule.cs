@@ -56,7 +56,7 @@ namespace PostNamazu.Modules
 
 namespace PostNamazu.Attributes
 {
-    [AttributeUsage(AttributeTargets.Method)]
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
     public class CommandAttribute : Attribute
     {
         public string Command { get; }

@@ -107,13 +107,14 @@ namespace PostNamazu
 #endif
                 var module = (NamazuModule)Activator.CreateInstance(t);
                 Modules.Add(module);
-                var commands = module.GetType().GetMethods().Where(method => method.GetCustomAttribute<CommandAttribute>() != null).ToArray();
+                var commands = module.GetType().GetMethods().Where(method => method.GetCustomAttributes<CommandAttribute>().Any()).ToArray();
                 foreach (var action in commands) {
 #if DEBUG
                     PluginUI.Log($"{action.Name}@{action.GetCustomAttribute<CommandAttribute>().Command}");
 #endif
                     var handlerDelegate = (HandlerDelegate)Delegate.CreateDelegate(typeof(HandlerDelegate), module, action);
-                    SetAction(action.GetCustomAttribute<CommandAttribute>().Command, handlerDelegate);
+                    foreach (var command in action.GetCustomAttributes<CommandAttribute>())
+                        SetAction(command.Command, handlerDelegate);
                 }
             }
         }
@@ -241,7 +242,6 @@ namespace PostNamazu
             }
             catch (ArgumentOutOfRangeException) {
                 PluginUI.Log("无法对当前进程注入\n可能是已经被其他进程注入了？");
-                return false;
             }
             return false;
         }
@@ -303,12 +303,11 @@ namespace PostNamazu
                 var plugin = ActGlobals.oFormActMain.ActPlugins.FirstOrDefault(x => x.pluginFile.Name.ToUpper().Contains("OverlayPlugin".ToUpper()));
                 if (plugin?.pluginObj == null) {
                     PluginUI.Log("没有找到OverlayPlugin");
+                    return;
                 }
-                else {
-                    PluginUI.Log("绑定OverlayPlugin");
-                    _overlayHoster = new OverlayHoster.Program { PostNamazuDelegate = DoAction };
-                    _overlayHoster.Init();
-                }
+                PluginUI.Log("绑定OverlayPlugin");
+                _overlayHoster = new OverlayHoster.Program { PostNamazuDelegate = DoAction };
+                _overlayHoster.Init();
             }
             catch (Exception ex) {
                 PluginUI.Log(ex.Message);

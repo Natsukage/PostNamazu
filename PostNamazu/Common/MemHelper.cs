@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security;
 
-namespace PostNamazu.Models
+namespace PostNamazu.Common
 {
     public unsafe class MemHelper
     {

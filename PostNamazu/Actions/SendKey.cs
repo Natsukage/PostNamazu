@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Runtime.InteropServices;
 using PostNamazu.Attributes;
 
-namespace PostNamazu.Modules
+namespace PostNamazu.Actions
 {
     internal class SendKey : NamazuModule
     {
@@ -30,16 +29,25 @@ namespace PostNamazu.Modules
 
         private void SendKeycode(int keycode)
         {
-            SendMessageToWindow(WinAPI.WM_KEYDOWN, keycode, 0);
-            SendMessageToWindow(WinAPI.WM_KEYUP, keycode, 0);
+            SendMessageToWindow(WM_KEYDOWN, keycode, 0);
+            SendMessageToWindow(WM_KEYUP, keycode, 0);
         }
 
         private void SendMessageToWindow(uint code, int wparam, int lparam)
         {
             IntPtr hwnd = FFXIV.MainWindowHandle;
-            if (hwnd != IntPtr.Zero) {
-                IntPtr res = WinAPI.SendMessage(hwnd, code, (IntPtr)wparam, (IntPtr)lparam);
-            }
+            if (hwnd != IntPtr.Zero)
+                SendMessage(hwnd, code, (IntPtr)wparam, (IntPtr)lparam);
+
         }
+
+        #region WinAPI
+        private const uint WM_KEYUP = 0x101;
+        private const uint WM_KEYDOWN = 0x100;
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+        #endregion
+
     }
 }

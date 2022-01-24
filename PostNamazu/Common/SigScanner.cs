@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.InteropServices;
 
-namespace PostNamazu.Models
+namespace PostNamazu.Common
 {
     public class SigScanner
     {

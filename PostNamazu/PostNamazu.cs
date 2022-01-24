@@ -2,20 +2,15 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Globalization;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Windows.Forms;
+using PostNamazu.Actions;
+using PostNamazu.Attributes;
+using PostNamazu.Common;
 using Advanced_Combat_Tracker;
 using GreyMagic;
-using Newtonsoft.Json;
-using PostNamazu.Models;
-using PostNamazu.Actions;
-using PostNamazu.Modules;
-using PostNamazu.Attributes;
-using System.Linq.Expressions;
 
 namespace PostNamazu
 {
@@ -35,15 +30,15 @@ namespace PostNamazu
         private OverlayHoster.Program _overlayHoster;
         private TriggerHoster.Program _triggerHoster;
 
-        internal FFXIV_ACT_Plugin.FFXIV_ACT_Plugin _ffxivPlugin;
         internal Process FFXIV;
+        internal FFXIV_ACT_Plugin.FFXIV_ACT_Plugin FFXIV_ACT_Plugin;
         internal ExternalProcessMemory Memory;
         internal SigScanner SigScanner;
 
         private IntPtr _entrancePtr;
-        private Dictionary<string, HandlerDelegate> CmdBind = new Dictionary<string, HandlerDelegate>();
+        private Dictionary<string, HandlerDelegate> CmdBind = new();
 
-        private List<NamazuModule> Modules = new List<NamazuModule>();
+        private List<NamazuModule> Modules = new();
 
         #region Init
         public void InitPlugin(TabPage pluginScreenSpace, Label pluginStatusText)
@@ -56,11 +51,11 @@ namespace PostNamazu
 
             PluginUI.Log($"插件版本:{Assembly.GetExecutingAssembly().GetName().Version}");
 
-            _ffxivPlugin = GetFfxivPlugin();
+            FFXIV_ACT_Plugin = GetFFXIVPlugin();
 
 
             //目前解析插件有bug，在特定情况下无法正常触发ProcessChanged事件。因此只能通过后台线程实时监控
-            //_ffxivPlugin.DataSubscription.ProcessChanged += ProcessChanged;
+            //FFXIV_ACT_Plugin.DataSubscription.ProcessChanged += ProcessChanged;
             _processSwitcher = new BackgroundWorker { WorkerSupportsCancellation = true };
             _processSwitcher.DoWork += ProcessSwitcher;
             _processSwitcher.RunWorkerAsync();
@@ -79,15 +74,13 @@ namespace PostNamazu
 
         public void DeInitPlugin()
         {
-            //_ffxivPlugin.DataSubscription.ProcessChanged -= ProcessChanged;
+            //FFXIV_ACT_Plugin.DataSubscription.ProcessChanged -= ProcessChanged;
             PluginUI.SaveSettings();
             Detach();
             _overlayHoster.DeInit();
             _triggerHoster.DeInit();
             if (_httpServer != null) ServerStop();
             _processSwitcher.CancelAsync();
-
-            
             
             _lblStatus.Text = "鲶鱼精邮差已退出";
         }
@@ -107,7 +100,7 @@ namespace PostNamazu
 #endif
                 var module = (NamazuModule)Activator.CreateInstance(t);
                 Modules.Add(module);
-                var commands = module.GetType().GetMethods().Where(method => method.GetCustomAttributes<CommandAttribute>().Any()).ToArray();
+                var commands = module.GetType().GetMethods().Where(method => method.GetCustomAttributes<CommandAttribute>().Any());
                 foreach (var action in commands) {
 #if DEBUG
                     PluginUI.Log($"{action.Name}@{action.GetCustomAttribute<CommandAttribute>().Command}");
@@ -166,10 +159,7 @@ namespace PostNamazu
         /// </summary>
         private void Attach()
         {
-            Debug.Assert(FFXIV != null);
             try {
-                //Memory = new ExternalProcessMemory(FFXIV, false, false);
-                //Memory.WriteBytes(_entrancePtr, new byte[] { 76, 139, 220, 83, 86 });
                 Memory = new ExternalProcessMemory(FFXIV, true, false, _entrancePtr, false, 5, true);
                 PluginUI.Log($"已找到FFXIV进程 {FFXIV.Id}");
             }
@@ -200,7 +190,7 @@ namespace PostNamazu
         ///     取得解析插件（从獭爹那里偷来的）
         /// </summary>
         /// <returns></returns>
-        private FFXIV_ACT_Plugin.FFXIV_ACT_Plugin GetFfxivPlugin()
+        private FFXIV_ACT_Plugin.FFXIV_ACT_Plugin GetFFXIVPlugin()
         {
             FFXIV_ACT_Plugin.FFXIV_ACT_Plugin ffxivActPlugin = null;
             foreach (var actPluginData in ActGlobals.oFormActMain.ActPlugins)
@@ -217,7 +207,7 @@ namespace PostNamazu
         /// <returns>解析插件当前对应进程</returns>
         private Process GetFFXIVProcess()
         {
-            return _ffxivPlugin.DataRepository.GetCurrentFFXIVProcess();
+            return FFXIV_ACT_Plugin.DataRepository.GetCurrentFFXIVProcess();
         }
 
         /// <summary>
@@ -266,9 +256,8 @@ namespace PostNamazu
                     if (FFXIV != null)
                         if (FFXIV.ProcessName == "ffxiv")
                             PluginUI.Log("错误：游戏运行于DX9模式下");
-                        else if (GetOffsets()) {
+                        else if (GetOffsets()) 
                             Attach();
-                        }
                 }
                 Thread.Sleep(3000);
             }
@@ -405,7 +394,5 @@ namespace PostNamazu
             CmdBind.Clear();
         }
         #endregion
-
-
     }
 }

@@ -1,15 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Newtonsoft.Json;
 using PostNamazu.Attributes;
 using PostNamazu.Models;
+using Newtonsoft.Json;
 
-namespace PostNamazu.Modules
+namespace PostNamazu.Actions
 {
     internal class WayMark : NamazuModule
     {
-        private WayMarks tempMarks; //暂存场地标点\
+        private WayMarks tempMarks; //暂存场地标点
         private IntPtr Waymarks;
         private IntPtr MarkingController;
 
@@ -40,13 +38,16 @@ namespace PostNamazu.Modules
         ///     场地标点
         /// </summary>
         /// <param name="waymarksStr">标点合集序列化Json字符串</param>
-        [Command("place"), Command("DoWaymarks")]
+        [Command("place")] [Command("DoWaymarks")]
         public void DoWaymarks(string waymarksStr)
         {
             if (!isReady) {
                 PluginUI.Log("执行错误：接收到指令，但是没有对应的游戏进程");
                 throw new Exception("没有对应的游戏进程");
             }
+
+            if (waymarksStr == "")
+                throw new Exception("指令为空");
 
             switch (waymarksStr.ToLower()) {
                 case "save":
@@ -68,20 +69,11 @@ namespace PostNamazu.Modules
         /// <summary>
         ///     暂存当前标点
         /// </summary>
-        public void SaveWaymark(string paylaod) {
-            if (!isReady) {
-                PluginUI.Log("执行错误：接收到指令，但是没有对应的游戏进程");
-                throw new Exception("没有对应的游戏进程");
-            }
-
-            SaveWaymark();
-        }
-
         public void SaveWaymark()
         {
             tempMarks = new WayMarks();
 
-            Waymark ReadWaymark(IntPtr addr, WaymarkID id) => new Waymark
+            Waymark ReadWaymark(IntPtr addr, WaymarkID id) => new()
             {
                 X = Memory.Read<float>(addr),
                 Y = Memory.Read<float>(addr + 0x4),
@@ -110,11 +102,6 @@ namespace PostNamazu.Modules
         /// <summary>
         ///     恢复暂存标点
         /// </summary>
-        public void LoadWaymark(string paylaod)
-        {
-            LoadWaymark();
-        }
-
         public void LoadWaymark()
         {
             if (tempMarks == null)
@@ -135,33 +122,18 @@ namespace PostNamazu.Modules
 
             var wId = id == -1 ? (byte)waymark.ID : id;
 
-            var markAddr = IntPtr.Zero;
-            switch (wId) {
-                case (int)WaymarkID.A:
-                    markAddr = Waymarks + 0x00;
-                    break;
-                case (int)WaymarkID.B:
-                    markAddr = Waymarks + 0x20;
-                    break;
-                case (int)WaymarkID.C:
-                    markAddr = Waymarks + 0x40;
-                    break;
-                case (int)WaymarkID.D:
-                    markAddr = Waymarks + 0x60;
-                    break;
-                case (int)WaymarkID.One:
-                    markAddr = Waymarks + 0x80;
-                    break;
-                case (int)WaymarkID.Two:
-                    markAddr = Waymarks + 0xA0;
-                    break;
-                case (int)WaymarkID.Three:
-                    markAddr = Waymarks + 0xC0;
-                    break;
-                case (int)WaymarkID.Four:
-                    markAddr = Waymarks + 0xE0;
-                    break;
-            }
+            var markAddr = wId switch
+            {
+                (int)WaymarkID.A => Waymarks + 0x00,
+                (int)WaymarkID.B => Waymarks + 0x20,
+                (int)WaymarkID.C => Waymarks + 0x40,
+                (int)WaymarkID.D => Waymarks + 0x60,
+                (int)WaymarkID.One => Waymarks + 0x80,
+                (int)WaymarkID.Two => Waymarks + 0xA0,
+                (int)WaymarkID.Three => Waymarks + 0xC0,
+                (int)WaymarkID.Four => Waymarks + 0xE0,
+                _ => IntPtr.Zero
+            };
 
             // Write the X, Y and Z coordinates
             Memory.Write(markAddr, waymark.X);

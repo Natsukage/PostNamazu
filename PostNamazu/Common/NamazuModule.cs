@@ -1,15 +1,13 @@
-﻿using GreyMagic;
-using PostNamazu.Models;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Diagnostics;
-using System.Text;
+using PostNamazu.Common;
+using GreyMagic;
 
-namespace PostNamazu.Modules
+namespace PostNamazu.Actions
 {
     internal abstract class NamazuModule
     {
-        protected FFXIV_ACT_Plugin.FFXIV_ACT_Plugin _ffxivPlugin;
+        protected FFXIV_ACT_Plugin.FFXIV_ACT_Plugin FFXIV_ACT_Plugin;
         protected Process FFXIV;
         protected ExternalProcessMemory Memory;
         protected PostNamazuUi PluginUI;
@@ -19,7 +17,7 @@ namespace PostNamazu.Modules
 
         public void Setup(PostNamazu postNamazu)
         {
-            _ffxivPlugin = postNamazu._ffxivPlugin;
+            FFXIV_ACT_Plugin = postNamazu.FFXIV_ACT_Plugin;
             FFXIV = postNamazu.FFXIV;
             Memory = postNamazu.Memory;
             PluginUI = postNamazu.PluginUI;
@@ -32,7 +30,7 @@ namespace PostNamazu.Modules
                 isReady = false;
             }
             //Log("初始化完成");
-            if (_ffxivPlugin != null && FFXIV != null && Memory != null) {
+            if (FFXIV_ACT_Plugin != null && FFXIV != null && Memory != null) {
                 isReady = true;
             }
             else {

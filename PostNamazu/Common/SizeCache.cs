@@ -4,7 +4,7 @@ using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace PostNamazu.Models
+namespace PostNamazu.Common
 {
     /// <summary>
     ///     A cheaty way to get very fast "Marshal.SizeOf" support without the overhead of the Marshaler each time.

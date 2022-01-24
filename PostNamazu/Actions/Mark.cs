@@ -1,15 +1,11 @@
 ﻿using Newtonsoft.Json;
+using System;
+using System.Linq;
+using System.Threading;
 using PostNamazu.Attributes;
 using PostNamazu.Models;
-using PostNamazu.Modules;
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading;
 
-namespace PostNamazu.Modules
+namespace PostNamazu.Actions
 {
     internal class Mark : NamazuModule
     {
@@ -23,7 +19,6 @@ namespace PostNamazu.Modules
             //char __fastcall sub_1407A6A60(__int64 g_MarkingController, __int64 MarkType, __int64 ActorID)
             MarkingFunc = base.SigScanner.ScanText("48 89 5C 24 10 48 89 6C 24 18 57 48 83 EC 20 8D 42");
             LocalMarkingFunc = base.SigScanner.ScanText("E8 ?? ?? ?? ?? 4C 8B C5 8B D7");
-            //char __fastcall sub_1407A6A60(__int64 g_MarkingController, __int64 MarkType, __int64 ActorID)
             MarkingController = SigScanner.GetStaticAddressFromSig("48 8B 94 24 ? ? ? ? 48 8D 0D ? ? ? ? 41 B0 01");
         }
         //反正没人用,不如重构
@@ -39,21 +34,16 @@ namespace PostNamazu.Modules
                 throw new Exception("指令为空");
 
             var mark=JsonConvert.DeserializeObject<Marking>(command);
-            if (mark.MarkType == null) {
+            if (mark?.MarkType == null) {
                 throw new Exception("标记错误");
             }
             uint actorID = 0xE000000;
-            if (mark.ActorID == null) {
-                actorID = GetActorIDByName(mark.Name);
-            }
-            else {
-                actorID= mark.ActorID.Value;
-            }
+            actorID = mark.ActorID ?? GetActorIDByName(mark.Name);
             DoMarkingByActorID(actorID,mark.MarkType.Value,mark.LocalOnly);
         }
         private uint GetActorIDByName(string Name)
         {
-            var combatant = _ffxivPlugin.DataRepository.GetCombatantList().FirstOrDefault(i => i.Name != null && i.ID != 0xE0000000 && i.Name.Equals(Name));
+            var combatant = FFXIV_ACT_Plugin.DataRepository.GetCombatantList().FirstOrDefault(i => i.Name != null && i.ID != 0xE0000000 && i.Name.Equals(Name));
             if (combatant == null) {
                 throw new Exception($"未能找到{Name}");
             }
@@ -62,7 +52,7 @@ namespace PostNamazu.Modules
         }
         private void DoMarkingByActorID(uint ActorID, MarkType markingType, bool localOnly = false)
         {
-            var combatant = _ffxivPlugin.DataRepository.GetCombatantList().FirstOrDefault(i => i.ID == ActorID);
+            var combatant = FFXIV_ACT_Plugin.DataRepository.GetCombatantList().FirstOrDefault(i => i.ID == ActorID);
             if (combatant == null) {
                 throw new Exception($"未能找到{ActorID}");
             }

@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text;
 using System.Threading;
-using GreyMagic;
 using PostNamazu.Attributes;
-using PostNamazu.Modules;
+using GreyMagic;
 
 namespace PostNamazu.Actions
 {
@@ -34,17 +32,17 @@ namespace PostNamazu.Actions
         ///     执行给出的文本指令
         /// </summary>
         /// <param name="command">文本指令</param>
-        [Command("command"), Command("DoTextCommand")]
+        [Command("command")] [Command("DoTextCommand")]
         public void DoTextCommand(string command)
         {
             if (!isReady) {
                 PluginUI.Log("执行错误：接收到指令，但是没有对应的游戏进程");
                 throw new Exception("没有对应的游戏进程");
             }
-
-            PluginUI.Log(command);
+            
             if (command == "")
                 throw new Exception("指令为空");
+            PluginUI.Log(command);
 
             var assemblyLock = Memory.Executor.AssemblyLock;
 
@@ -52,20 +50,18 @@ namespace PostNamazu.Actions
             try {
                 Monitor.Enter(assemblyLock, ref flag);
                 var array = Encoding.UTF8.GetBytes(command);
-                using (AllocatedMemory allocatedMemory = Memory.CreateAllocatedMemory(400), allocatedMemory2 = Memory.CreateAllocatedMemory(array.Length + 30)) {
-                    allocatedMemory2.AllocateOfChunk("cmd", array.Length);
-                    allocatedMemory2.WriteBytes("cmd", array);
-                    allocatedMemory.AllocateOfChunk<IntPtr>("cmdAddress");
-                    allocatedMemory.AllocateOfChunk<long>("t1");
-                    allocatedMemory.AllocateOfChunk<long>("tLength");
-                    allocatedMemory.AllocateOfChunk<long>("t3");
-                    allocatedMemory.Write("cmdAddress", allocatedMemory2.Address);
-                    allocatedMemory.Write("t1", 0x40);
-                    allocatedMemory.Write("tLength", array.Length + 1);
-                    allocatedMemory.Write("t3", 0x00);
-                    _ = Memory.CallInjected64<int>(ProcessChatBoxPtr, RaptureModule,
-                        allocatedMemory.Address, UiModule);
-                }
+                using AllocatedMemory allocatedMemory = Memory.CreateAllocatedMemory(400), allocatedMemory2 = Memory.CreateAllocatedMemory(array.Length + 30);
+                allocatedMemory2.AllocateOfChunk("cmd", array.Length);
+                allocatedMemory2.WriteBytes("cmd", array);
+                allocatedMemory.AllocateOfChunk<IntPtr>("cmdAddress");
+                allocatedMemory.AllocateOfChunk<long>("t1");
+                allocatedMemory.AllocateOfChunk<long>("tLength");
+                allocatedMemory.AllocateOfChunk<long>("t3");
+                allocatedMemory.Write("cmdAddress", allocatedMemory2.Address);
+                allocatedMemory.Write("t1", 0x40);
+                allocatedMemory.Write("tLength", array.Length + 1);
+                allocatedMemory.Write("t3", 0x00);
+                _ = Memory.CallInjected64<int>(ProcessChatBoxPtr, RaptureModule, allocatedMemory.Address, UiModule);
             }
             finally {
                 if (flag) Monitor.Exit(assemblyLock);

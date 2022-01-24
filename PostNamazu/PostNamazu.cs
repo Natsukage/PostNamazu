@@ -36,7 +36,7 @@ namespace PostNamazu
         internal SigScanner SigScanner;
 
         private IntPtr _entrancePtr;
-        private Dictionary<string, HandlerDelegate> CmdBind = new();
+        private Dictionary<string, HandlerDelegate> CmdBind = new(StringComparer.OrdinalIgnoreCase); //key不区分大小写
 
         private List<NamazuModule> Modules = new();
 

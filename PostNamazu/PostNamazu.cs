@@ -187,18 +187,13 @@ namespace PostNamazu
         }
 
         /// <summary>
-        ///     取得解析插件（从獭爹那里偷来的）
+        ///     取得解析插件
         /// </summary>
         /// <returns></returns>
         private FFXIV_ACT_Plugin.FFXIV_ACT_Plugin GetFFXIVPlugin()
         {
-            FFXIV_ACT_Plugin.FFXIV_ACT_Plugin ffxivActPlugin = null;
-            foreach (var actPluginData in ActGlobals.oFormActMain.ActPlugins)
-                if (actPluginData.pluginFile.Name.ToUpper().Contains("FFXIV_ACT_Plugin".ToUpper()) &&
-                    (actPluginData.lblPluginStatus.Text.ToUpper().Contains("FFXIV Plugin Started.".ToUpper()) || //国服旧版本
-                     actPluginData.lblPluginStatus.Text.ToUpper().Contains("FFXIV_ACT_Plugin Started.".ToUpper())))  //国际服新版本
-                    ffxivActPlugin = (FFXIV_ACT_Plugin.FFXIV_ACT_Plugin)actPluginData.pluginObj;
-            return ffxivActPlugin ?? throw new Exception("找不到FFXIV解析插件，请确保其加载顺序位于鲶鱼精邮差之前。");
+            var plugin = ActGlobals.oFormActMain.ActPlugins.FirstOrDefault(x => x.pluginObj?.GetType().ToString() == "FFXIV_ACT_Plugin.FFXIV_ACT_Plugin")?.pluginObj;
+            return (FFXIV_ACT_Plugin.FFXIV_ACT_Plugin)plugin ?? throw new Exception("找不到FFXIV解析插件，请确保其加载顺序位于鲶鱼精邮差之前。");
         }
 
         /// <summary>
@@ -269,13 +264,13 @@ namespace PostNamazu
         private void TriggIntegration()
         {
             try {
-                var plugin = ActGlobals.oFormActMain.ActPlugins.FirstOrDefault(x => x.pluginFile.Name.ToUpper().Contains("Triggernometry".ToUpper()));
-                if (plugin?.pluginObj == null) {
+                var plugin = ActGlobals.oFormActMain.ActPlugins.FirstOrDefault(x => x.pluginObj?.GetType().ToString() == "TriggernometryProxy.ProxyPlugin")?.pluginObj;
+                if (plugin == null) {
                     PluginUI.Log("没有找到Triggernometry");
                     return;
                 }
                 PluginUI.Log("绑定Triggernometry");
-                _triggerHoster = new TriggerHoster.Program(plugin.pluginObj) { PostNamazuDelegate = DoAction };
+                _triggerHoster = new TriggerHoster.Program(plugin) { PostNamazuDelegate = DoAction };
                 _triggerHoster.Init(CmdBind.Keys.ToArray());
             }
             catch (Exception ex) {
@@ -289,8 +284,8 @@ namespace PostNamazu
         private void OverlayIntegration()
         {
             try {
-                var plugin = ActGlobals.oFormActMain.ActPlugins.FirstOrDefault(x => x.pluginFile.Name.ToUpper().Contains("OverlayPlugin".ToUpper()));
-                if (plugin?.pluginObj == null) {
+                var plugin = ActGlobals.oFormActMain.ActPlugins.FirstOrDefault(x => x.pluginObj?.GetType().ToString() == "RainbowMage.OverlayPlugin.PluginLoader")?.pluginObj;
+                if (plugin == null) {
                     PluginUI.Log("没有找到OverlayPlugin");
                     return;
                 }

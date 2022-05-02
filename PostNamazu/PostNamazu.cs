@@ -102,12 +102,15 @@ namespace PostNamazu
                 Modules.Add(module);
                 var commands = module.GetType().GetMethods().Where(method => method.GetCustomAttributes<CommandAttribute>().Any());
                 foreach (var action in commands) {
-#if DEBUG
-                    PluginUI.Log($"{action.Name}@{action.GetCustomAttribute<CommandAttribute>().Command}");
-#endif
                     var handlerDelegate = (HandlerDelegate)Delegate.CreateDelegate(typeof(HandlerDelegate), module, action);
                     foreach (var command in action.GetCustomAttributes<CommandAttribute>())
+                    {
                         SetAction(command.Command, handlerDelegate);
+#if DEBUG
+                        PluginUI.Log($"{action.Name}@{command.Command}");
+#endif
+                    }
+                    
                 }
             }
         }

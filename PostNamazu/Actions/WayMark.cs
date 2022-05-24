@@ -58,6 +58,9 @@ namespace PostNamazu.Actions
                 case "restore":
                     LoadWaymark();
                     break;
+                case "clear":
+                    DoWaymarks(new WayMarks { A = new Waymark(), B = new Waymark(), C = new Waymark(), D = new Waymark(), One = new Waymark(), Two = new Waymark(), Three = new Waymark(), Four = new Waymark() });
+                    break;
                 default:
                     var waymarks = JsonConvert.DeserializeObject<WayMarks>(waymarksStr);
                     PluginUI.Log(waymarksStr);

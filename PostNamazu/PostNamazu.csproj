@@ -27,11 +27,8 @@
       <Private>False</Private>
       <CopyLocal>False</CopyLocal>
     </Reference>
-    <Reference Include="GreyMagic, Version=1.0.41.0, Culture=neutral, PublicKeyToken=260525fa2b0e778a, processorArchitecture=AMD64">
+    <Reference Include="GreyMagic">
       <HintPath>Costura64\GreyMagic.dll</HintPath>
-      <SpecificVersion>False</SpecificVersion>
-      <Private>False</Private>
-      <CopyLocal>False</CopyLocal>
     </Reference>
     <Reference Include="System.Windows.Forms">
       <HintPath>C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Windows.Forms\v4.0_4.0.0.0__b77a5c561934e089\System.Windows.Forms.dll</HintPath>

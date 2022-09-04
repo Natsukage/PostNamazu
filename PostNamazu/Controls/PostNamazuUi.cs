@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Windows.Forms;
@@ -13,11 +14,25 @@ namespace PostNamazu
         {
             InitializeComponent();
             LoadSettings();
-            ButtonCopyProblematic.Click += cmdCopyProblematic_Click;
-            ButtonClearMessage.Click += cmdClearMessages_Click;
         }
         public bool AutoStart => CheckAutoStart.Checked;
         private static readonly string SettingsFile = Path.Combine(ActGlobals.oFormActMain.AppDataFolder.FullName, "Config\\PostNamazu.config.xml");
+        public Dictionary<string, bool> ActionEnabled = new();
+
+        public void RegisterAction(string name)
+        {
+            if (!ActionEnabled.ContainsKey(name))
+                ActionEnabled[name] = true;
+            CheckBox checkAction = new() { Text = name, Checked = ActionEnabled[name] };
+            checkAction.CheckedChanged += CheckBoxActions_CheckedChanged;
+            flowLayoutActions.Controls.Add(checkAction);
+        }
+
+        private void CheckBoxActions_CheckedChanged(object sender, System.EventArgs e)
+        {
+            CheckBox checkbox = (CheckBox)sender;
+            ActionEnabled[checkbox.Text]=checkbox.Checked;
+        }
 
         public void Log(string log)
         {
@@ -77,13 +92,20 @@ namespace PostNamazu
 
             if (File.Exists(SettingsFile))
             {
-                XmlDocument xdo = new XmlDocument();
+                XmlDocument xdo = new();
                 try
                 {
                     xdo.Load(SettingsFile);
                     XmlNode head = xdo.SelectSingleNode("Config");
                     TextPort.Text = head?.SelectSingleNode("Port")?.InnerText;
+                    if (string.IsNullOrEmpty(TextPort.Text)) 
+                        TextPort.Text = "2019";
                     CheckAutoStart.Checked = bool.Parse(head?.SelectSingleNode("AutoStart")?.InnerText ?? "false");
+
+                    var actionList = head?.SelectSingleNode("Actions")?.ChildNodes;
+                    if (actionList == null) return;
+                    foreach (XmlNode action in actionList)
+                        ActionEnabled[action.Name] = bool.Parse(action.InnerText);
                 }
                 catch (Exception)
                 {
@@ -103,6 +125,10 @@ namespace PostNamazu
             xWriter.WriteStartElement("Config");    // <Config>
             xWriter.WriteElementString("Port", TextPort.Text);
             xWriter.WriteElementString("AutoStart", CheckAutoStart.Checked.ToString());
+            xWriter.WriteStartElement("Actions");    // <Actions>
+            foreach (var action in ActionEnabled)
+                xWriter.WriteElementString(action.Key,action.Value.ToString());
+            xWriter.WriteEndElement();  // </Actions>
             xWriter.WriteEndElement();  // </Config>
             xWriter.WriteEndDocument(); // Tie up loose ends (shouldn't be any)
             xWriter.Flush();    // Flush the file buffer to disk

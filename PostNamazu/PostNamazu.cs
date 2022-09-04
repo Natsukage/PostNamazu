@@ -36,6 +36,7 @@ namespace PostNamazu
         internal SigScanner SigScanner;
 
         private IntPtr _entrancePtr;
+        public Dictionary<string, bool> ActionEnabled => PluginUI.ActionEnabled; //直接使用UI控件上的ActionEnabled状态
         private Dictionary<string, HandlerDelegate> CmdBind = new(StringComparer.OrdinalIgnoreCase); //key不区分大小写
 
         private List<NamazuModule> Modules = new();
@@ -100,6 +101,7 @@ namespace PostNamazu
 #endif
                 var module = (NamazuModule)Activator.CreateInstance(t);
                 Modules.Add(module);
+                PluginUI.RegisterAction(t.Name);
                 var commands = module.GetType().GetMethods().Where(method => method.GetCustomAttributes<CommandAttribute>().Any());
                 foreach (var action in commands) {
                     var handlerDelegate = (HandlerDelegate)Delegate.CreateDelegate(typeof(HandlerDelegate), module, action);
@@ -351,8 +353,14 @@ namespace PostNamazu
         /// <param name="payload"></param>
         public void DoAction(string command, string payload)
         {
-            try { 
-                GetAction(command)(payload); 
+            try
+            {
+                string reflectedType = GetAction(command).GetMethodInfo().ReflectedType!.Name;
+
+                if (ActionEnabled.ContainsKey(reflectedType) && ActionEnabled[reflectedType]) //不响应没有启用的动作
+                    GetAction(command)(payload);
+                else
+                    PluginUI.Log($"忽略动作：{command}:{payload}");
             }
             catch (Exception ex) {
                 PluginUI.Log(ex.ToString());

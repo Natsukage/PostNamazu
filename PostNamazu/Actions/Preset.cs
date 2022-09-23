@@ -12,7 +12,7 @@ namespace PostNamazu.Actions
         private IntPtr UIModulePtrPtr;
         private Int32 WayMarkSlotOffset;
         public IntPtr MapIDPtr;
-
+        
         public override void GetOffsets()
         {
             base.GetOffsets();
@@ -59,18 +59,18 @@ namespace PostNamazu.Actions
 
             var WayMarkSlotPtr = UIModule + WayMarkSlotOffset;
             var WaymarkDataPointer = WayMarkSlotPtr + 64 + (int)(104 * (slotNum - 1));
-            //logger.Debug($"WaymarkDataPointer={WaymarkDataPointer.ToUint64().AsHex()}");
             return WaymarkDataPointer;
         }
 
         /// <summary>
-        ///     载入预设
+        ///     写入预设
         /// </summary>
         /// <param name="waymarks">标点合集对象</param>
         private void DoInsertPreset(WayMarks waymarks)
         {
-            ushort mapID = (waymarks.MapID is > 1000 or 0) ? SigScanner.Read<ushort>(MapIDPtr) : waymarks.MapID;
-            if (mapID==0)
+            if (waymarks.MapID is > 1000 or 0) 
+                waymarks.MapID = SigScanner.Read<ushort>(MapIDPtr);
+            if (waymarks.MapID == 0)
             {
                 Log("预设与当前地图ID均不合法，加载预设失败");
                 return;
@@ -86,12 +86,12 @@ namespace PostNamazu.Actions
                 _ => GetWaymarkDataPointerForSlot(1)
             };
 
-            byte[] importdata = ConstructGamePreset(waymarks, mapID);
+            byte[] importdata = ConstructGamePreset(waymarks);
             Memory.WriteBytes(SlotOffset, importdata);
             
         }
         /// <summary>
-        ///     载入预设
+        ///     写入预设
         /// </summary>
         /// <param name="waymarksStr">标点合集序列化Json字符串</param>
         [Command("preset")] [Command("DoInsertPreset")]
@@ -118,7 +118,7 @@ namespace PostNamazu.Actions
         /// </summary>
         /// <param name="waymark">标点</param>
         /// <returns>byte[]预设结构</returns>
-        public byte[] ConstructGamePreset(WayMarks waymarks, ushort MapID)
+        public byte[] ConstructGamePreset(WayMarks waymarks)
         {
             //	List is easy because we can just push data on to it.
             List<byte> byteData = new List<byte>();
@@ -139,7 +139,7 @@ namespace PostNamazu.Actions
             byteData.Add((byte)0x00);
 
             //	Territory ID.
-            byteData.AddRange(BitConverter.GetBytes(MapID));
+            byteData.AddRange(BitConverter.GetBytes(waymarks.MapID));
 
             //	Time last modified.
             DateTimeOffset Time = new DateTimeOffset(DateTimeOffset.Now.UtcDateTime);

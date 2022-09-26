@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using PostNamazu.Attributes;
 
 namespace PostNamazu.Actions
@@ -10,28 +11,34 @@ namespace PostNamazu.Actions
         [Command("queue")] [Command("DoQueueActions")]
         public async void DoQueue(string command)
         {
-            if (!isReady) {
-                PluginUI.Log("执行错误：接收到指令，但是没有对应的游戏进程");
-                throw new Exception("没有对应的游戏进程");
-            }
-
-            if (command == "")
-                throw new Exception("指令为空");
             try
             {
+                if (!isReady)
+                    throw new Exception("没有对应的游戏进程");
+
+                if (command == "")
+                    throw new Exception("指令为空");
                 var actions = JsonConvert.DeserializeObject<QueueAction[]>(command);
                 foreach (var action in actions)
                 {
                     await Task.Run(async () =>
                     {
                         await Task.Delay(action.d);
-                        PostNamazu.DoAction(action.c, action.p);
+                        try
+                        {
+                            PostNamazu.DoAction(action.c, action.p);
+                        }
+                        catch (Exception e)
+                        {
+                            Log(e.ToString());
+                        }
+                        
                     });
                 }
             }
             catch (Exception e)
             {
-                Log(e.Message);
+                Log(e.ToString());
             }
 
         }

@@ -100,6 +100,7 @@ namespace PostNamazu
                 PluginUI.Log($"Initalizing Module: {t.Name}");
 #endif
                 var module = (NamazuModule)Activator.CreateInstance(t);
+                module.Init(this);
                 Modules.Add(module);
                 PluginUI.RegisterAction(t.Name);
                 var commands = module.GetType().GetMethods().Where(method => method.GetCustomAttributes<CommandAttribute>().Any());
@@ -173,7 +174,7 @@ namespace PostNamazu
                 Detach();
             }
             foreach (var m in Modules) {
-                m.Setup(this);
+                m.Setup();
             }
         }
 

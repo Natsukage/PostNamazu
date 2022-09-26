@@ -41,10 +41,8 @@ namespace PostNamazu.Actions
         [Command("place")] [Command("DoWaymarks")]
         public void DoWaymarks(string waymarksStr)
         {
-            if (!isReady) {
-                PluginUI.Log("执行错误：接收到指令，但是没有对应的游戏进程");
+            if (!isReady)
                 throw new Exception("没有对应的游戏进程");
-            }
 
             if (waymarksStr == "")
                 throw new Exception("指令为空");

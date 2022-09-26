@@ -16,9 +16,10 @@ namespace PostNamazu.Actions
 
         internal bool isReady = false;
 
-        public void Setup(PostNamazu postNamazu)
+        public void Init(PostNamazu postNamazu) => PostNamazu = postNamazu;
+
+        public void Setup()
         {
-            PostNamazu=postNamazu;
             try {
                 GetOffsets();
             }
@@ -42,7 +43,7 @@ namespace PostNamazu.Actions
 
         public void Log(string msg)
         {
-            PluginUI.Log(msg);
+            PluginUI?.Log(msg);
         }
     }
 

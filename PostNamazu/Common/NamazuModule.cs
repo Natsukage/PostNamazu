@@ -7,21 +7,18 @@ namespace PostNamazu.Actions
 {
     internal abstract class NamazuModule
     {
-        protected FFXIV_ACT_Plugin.FFXIV_ACT_Plugin FFXIV_ACT_Plugin;
-        protected Process FFXIV;
-        protected ExternalProcessMemory Memory;
-        protected PostNamazuUi PluginUI;
-        protected SigScanner SigScanner;
+        protected PostNamazu PostNamazu;
+        protected FFXIV_ACT_Plugin.FFXIV_ACT_Plugin FFXIV_ACT_Plugin => PostNamazu?.FFXIV_ACT_Plugin;
+        protected Process FFXIV => PostNamazu?.FFXIV;
+        protected ExternalProcessMemory Memory => PostNamazu?.Memory;
+        protected PostNamazuUi PluginUI => PostNamazu?.PluginUI;
+        protected SigScanner SigScanner => PostNamazu?.SigScanner;
 
         internal bool isReady = false;
 
         public void Setup(PostNamazu postNamazu)
         {
-            FFXIV_ACT_Plugin = postNamazu.FFXIV_ACT_Plugin;
-            FFXIV = postNamazu.FFXIV;
-            Memory = postNamazu.Memory;
-            PluginUI = postNamazu.PluginUI;
-            SigScanner = postNamazu.SigScanner;
+            PostNamazu=postNamazu;
             try {
                 GetOffsets();
             }

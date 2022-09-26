@@ -23,7 +23,7 @@ namespace PostNamazu
         {
             if (!ActionEnabled.ContainsKey(name))
                 ActionEnabled[name] = true;
-            CheckBox checkAction = new() { Text = name, Checked = ActionEnabled[name] };
+            CheckBox checkAction = new() { Text = name, Checked = ActionEnabled[name] ,AutoSize = true};
             checkAction.CheckedChanged += CheckBoxActions_CheckedChanged;
             flowLayoutActions.Controls.Add(checkAction);
         }

@@ -20,8 +20,6 @@ namespace PostNamazu.Actions
 
             var mapIDOffset = SigScanner.Read<UInt16>(SigScanner.ScanText("66 89 81 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 44 8B CF") + 3);
             MapIDPtr = SigScanner.GetStaticAddressFromSig("48 8D 0D ?? ?? ?? ?? 0F B6 55 ??") + mapIDOffset;
-
-            GetWayMarkSlotOffset();
         }
 
         private void GetWayMarkSlotOffset()
@@ -75,7 +73,8 @@ namespace PostNamazu.Actions
                 Log("预设与当前地图ID均不合法，加载预设失败");
                 return;
             }
-
+            GetWayMarkSlotOffset();
+            
             IntPtr SlotOffset = waymarks.Name switch
             {
                 "Slot1" => GetWaymarkDataPointerForSlot(1),
@@ -85,7 +84,7 @@ namespace PostNamazu.Actions
                 "Slot5" => GetWaymarkDataPointerForSlot(5),
                 _ => GetWaymarkDataPointerForSlot(1)
             };
-
+            
             byte[] importdata = ConstructGamePreset(waymarks);
             Memory.WriteBytes(SlotOffset, importdata);
             

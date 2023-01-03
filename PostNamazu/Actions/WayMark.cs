@@ -56,6 +56,10 @@ namespace PostNamazu.Actions
                 case "restore":
                     LoadWaymark();
                     break;
+                case "reset":
+                    tempMarks = null;
+                    PluginUI.Log("重置暂存标点");
+                    break;
                 case "clear":
                     DoWaymarks(new WayMarks { A = new Waymark(), B = new Waymark(), C = new Waymark(), D = new Waymark(), One = new Waymark(), Two = new Waymark(), Three = new Waymark(), Four = new Waymark() });
                     break;

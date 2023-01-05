@@ -51,7 +51,7 @@ namespace PostNamazu.Actions
         private void DoMarkingByActorID(uint ActorID, MarkType markingType, bool localOnly = false)
         {
             var combatant = FFXIV_ACT_Plugin.DataRepository.GetCombatantList().FirstOrDefault(i => i.ID == ActorID);
-            if (combatant == null) {
+            if (ActorID != 0xE000000 &&  combatant == null) {
                 throw new Exception($"未能找到{ActorID}");
             }
             PluginUI.Log($"ActorID={ActorID:X},markingType={(int)markingType},LocalOnly={localOnly}");

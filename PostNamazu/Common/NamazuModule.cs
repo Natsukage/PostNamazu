@@ -22,18 +22,13 @@ namespace PostNamazu.Actions
         {
             try {
                 GetOffsets();
+                isReady = FFXIV_ACT_Plugin != null && FFXIV != null && Memory != null;
             }
             catch (Exception ex) {
                 Log(ex.ToString());
                 isReady = false;
             }
             //Log("初始化完成");
-            if (FFXIV_ACT_Plugin != null && FFXIV != null && Memory != null) {
-                isReady = true;
-            }
-            else {
-                isReady = false;
-            }
         }
 
         public virtual void GetOffsets()

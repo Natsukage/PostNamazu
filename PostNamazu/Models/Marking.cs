@@ -30,5 +30,8 @@ namespace PostNamazu.Models
         circle,
         cross,
         triangle,
+        attack6,
+        attack7,
+        attack8,
     }
 }

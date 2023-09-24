@@ -1,0 +1,44 @@
+name: CI Build
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v2
+      
+    - name: Setup .NET Core SDK
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: '7.0.x'
+
+    - name: Restore NuGet packages
+      run: dotnet restore
+
+    - name: Download lib.zip
+      run: |
+        curl -LJO https://raw.githubusercontent.com/Natsukage/Assets/main/PostNamazu/Lib.zip
+
+    - name: Unzip lib.zip to Lib directory
+      run: |
+        Expand-Archive -Path Lib.zip -DestinationPath ./Lib
+
+    - name: Build project
+      run: |
+        dotnet build --configuration Release
+
+    - name: Upload PostNamazu.dll as artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: PostNamazu.dll
+        path: PostNamazu/bin/Release/netstandard2.0/PostNamazu.dll

@@ -4,6 +4,7 @@ using PostNamazu.Attributes;
 using PostNamazu.Models;
 using Newtonsoft.Json;
 using PostNamazu.Common;
+using System.Text.RegularExpressions;
 
 namespace PostNamazu.Actions
 {
@@ -75,16 +76,16 @@ namespace PostNamazu.Actions
             }
             GetWayMarkSlotOffset();
             
-            IntPtr SlotOffset = waymarks.Name switch
-            {
-                "Slot1" => GetWaymarkDataPointerForSlot(1),
-                "Slot2" => GetWaymarkDataPointerForSlot(2),
-                "Slot3" => GetWaymarkDataPointerForSlot(3),
-                "Slot4" => GetWaymarkDataPointerForSlot(4),
-                "Slot5" => GetWaymarkDataPointerForSlot(5),
-                _ => GetWaymarkDataPointerForSlot(1)
-            };
-            
+            IntPtr SlotOffset;
+
+            string pattern = @"^Slot0?(\d{1,2})$";
+            Match match = Regex.Match(waymarks.Name, pattern,RegexOptions.IgnoreCase);
+
+            if (match.Success && uint.TryParse(match.Groups[1].Value, out uint slotNum) && slotNum is > 0 and <= 30)
+                SlotOffset = GetWaymarkDataPointerForSlot(slotNum);
+            else
+                SlotOffset = GetWaymarkDataPointerForSlot(1);
+
             byte[] importdata = ConstructGamePreset(waymarks);
             Memory.WriteBytes(SlotOffset, importdata);
             

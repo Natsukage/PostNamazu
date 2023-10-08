@@ -164,6 +164,9 @@
             this.lstMessages.Name = "lstMessages";
             this.lstMessages.Size = new System.Drawing.Size(485, 580);
             this.lstMessages.TabIndex = 5;
+            this.lstMessages.HorizontalScrollbar = true;
+            this.lstMessages.HorizontalExtent = 0;
+
             // 
             // PostNamazuUi
             // 

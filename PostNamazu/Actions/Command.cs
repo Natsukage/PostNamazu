@@ -40,7 +40,35 @@ namespace PostNamazu.Actions
             
             if (command == "")
                 throw new Exception("指令为空");
+
+            // 去掉command中的所有换行符
+            command = command.Replace("\n", "").Replace("\r", "");
+
+            const int maxByteLength = 180;
+            string ignoredPortion = null;
+
+            // 检查command的Unicode字节长度是否超过180字节
+            if (Encoding.UTF8.GetByteCount(command) > maxByteLength)
+            {
+                byte[] bytes = Encoding.UTF8.GetBytes(command);
+                int maxBytes = maxByteLength;
+
+                // 确保不会截断一个Unicode字符
+                while (maxBytes > 0 && (bytes[maxBytes] & 0xC0) == 0x80)
+                {
+                    maxBytes--;
+                }
+
+                string truncatedCommand = Encoding.UTF8.GetString(bytes, 0, maxBytes);
+                ignoredPortion = command.Substring(truncatedCommand.Length);
+                command = truncatedCommand;
+            }
+
             PluginUI.Log(command);
+            if (!string.IsNullOrEmpty(ignoredPortion))
+            {
+                PluginUI.Log($"上一条命令中，文本\"{ignoredPortion}\"被忽略，因为系统宏的限制在180个字节以内。");
+            }
 
             var assemblyLock = Memory.Executor.AssemblyLock;
 

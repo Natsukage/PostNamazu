@@ -59,10 +59,9 @@ namespace PostNamazu.Actions
                     maxBytes--;
                 }
 
-                byte[] truncatedBytes = new byte[maxBytes];
-                Array.Copy(bytes, truncatedBytes, maxBytes);
-                ignoredPortion = command.Substring(Encoding.UTF8.GetString(truncatedBytes).Length);
-                command = command.Substring(0, command.Length - ignoredPortion.Length);
+                string truncatedCommand = Encoding.UTF8.GetString(bytes, 0, maxBytes);
+                ignoredPortion = command.Substring(truncatedCommand.Length);
+                command = truncatedCommand;
             }
 
             PluginUI.Log(command);

@@ -25,7 +25,7 @@ namespace PostNamazu.Actions
 
         private void GetWayMarkSlotOffset()
         {
-            var UIModuleSwitch = new SwitchParser(SigScanner, "8B 94 98 ?? ?? ?? ?? 48 03 D0", 3);
+            var UIModuleSwitch = new SwitchParser(SigScanner, "8B 94 98 ?? ?? ?? ?? 48 03 D0 FF E2 49", 3);
 
             //.text:000000014063AE36                        loc_14063AE36:; CODE XREF: sub_14063ACD0 + 32↑j
             //.text:000000014063AE36

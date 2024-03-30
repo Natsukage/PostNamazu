@@ -60,14 +60,14 @@ namespace PostNamazu.Actions
                 }
 
                 string truncatedCommand = Encoding.UTF8.GetString(bytes, 0, maxBytes);
-                ignoredPortion = command.Substring(truncatedCommand.Length);
+                ignoredPortion = Encoding.UTF8.GetString(bytes, maxBytes, bytes.Length - maxBytes);
                 command = truncatedCommand;
             }
 
             PluginUI.Log(command);
             if (!string.IsNullOrEmpty(ignoredPortion))
             {
-                PluginUI.Log($"上一条命令中，文本\"{ignoredPortion}\"被忽略，因为系统宏的限制在180个字节以内。");
+                PluginUI.Log($"忽略文本：“{ignoredPortion}”，因为系统宏的限制在180个字节以内。");
             }
 
             var assemblyLock = Memory.Executor.AssemblyLock;

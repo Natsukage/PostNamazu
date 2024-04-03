@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using System.Xml;
@@ -44,22 +45,53 @@ namespace PostNamazu
             AddParserMessage($"{ log.ToInt64():X}");
         }
 
-        public void cmdCopyProblematic_Click(object sender, EventArgs e)
+        public void cmdCopyProblematic_Click(object sender, EventArgs e) => CopyLog(copyAll: true);
+
+        public void cmdCopySelection_Click(object sender, EventArgs e) => CopyLog(copyAll: false);
+
+        private void CopyLog(bool copyAll)
         {
             StringBuilder stringBuilder = new StringBuilder();
-            foreach (object item in lstMessages.Items)
+            var source = copyAll ? lstMessages.Items.Cast<object>() : lstMessages.SelectedItems.Cast<object>();
+            foreach (object item in source)
             {
                 stringBuilder.AppendLine((item ?? "").ToString());
             }
             if (stringBuilder.Length > 0)
             {
+                stringBuilder.Remove(stringBuilder.Length - Environment.NewLine.Length, Environment.NewLine.Length);
                 Clipboard.SetText(stringBuilder.ToString());
             }
+        }
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            if (keyData == (Keys.Control | Keys.C))
+            {
+                CopyLog(copyAll: false);
+                return true;
+            }
+            return base.ProcessCmdKey(ref msg, keyData);
         }
 
         public void cmdClearMessages_Click(object sender, EventArgs e)
         {
             lstMessages.Items.Clear();
+        }
+
+        private int prevTipIdx = -1;
+        private void lstMessages_MouseMove(object sender, MouseEventArgs e)
+        {
+            ListBox lb = sender as ListBox;
+            int index = lb.IndexFromPoint(e.Location);
+            if (index != prevTipIdx)
+            {
+                if (index != -1)
+                    logTip.SetToolTip(lb, lb.Items[index].ToString());
+                else
+                    logTip.RemoveAll();
+                prevTipIdx = index;
+            }
         }
 
         internal static void RunOnACTUIThread(Action code)

@@ -136,9 +136,12 @@ namespace PostNamazu
 
         private void ServerStop(object sender = null, EventArgs e = null)
         {
-            _httpServer.Stop();
-            _httpServer.PostNamazuDelegate = null;
-            _httpServer.OnException -= OnException;
+            if (_httpServer != null)
+            {
+                _httpServer.Stop();
+                _httpServer.PostNamazuDelegate = null;
+                _httpServer.OnException -= OnException;
+            }
 
             PluginUI.ButtonStart.Enabled = true;
             PluginUI.ButtonStop.Enabled = false;

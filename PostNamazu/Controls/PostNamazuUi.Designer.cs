@@ -28,6 +28,7 @@
         /// </summary>
         public void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.CheckAutoStart = new System.Windows.Forms.CheckBox();
             this.ButtonStop = new System.Windows.Forms.Button();
             this.ButtonStart = new System.Windows.Forms.Button();
@@ -36,9 +37,11 @@
             this.mainGroupBox = new System.Windows.Forms.GroupBox();
             this.label1 = new System.Windows.Forms.Label();
             this.flowLayoutActions = new System.Windows.Forms.FlowLayoutPanel();
+            this.ButtonCopySelection = new System.Windows.Forms.Button();
             this.ButtonCopyProblematic = new System.Windows.Forms.Button();
             this.ButtonClearMessage = new System.Windows.Forms.Button();
             this.lstMessages = new System.Windows.Forms.ListBox();
+            this.logTip = new System.Windows.Forms.ToolTip(this.components);
             ((System.ComponentModel.ISupportInitialize)(this.TextPort)).BeginInit();
             this.mainGroupBox.SuspendLayout();
             this.flowLayoutActions.SuspendLayout();
@@ -103,6 +106,7 @@
             // 
             this.mainGroupBox.Controls.Add(this.CheckAutoStart);
             this.mainGroupBox.Controls.Add(this.flowLayoutActions);
+            this.mainGroupBox.Controls.Add(this.ButtonCopySelection);
             this.mainGroupBox.Controls.Add(this.ButtonCopyProblematic);
             this.mainGroupBox.Controls.Add(this.ButtonClearMessage);
             this.mainGroupBox.Controls.Add(this.lstMessages);
@@ -112,7 +116,7 @@
             this.mainGroupBox.Controls.Add(this.lbPort);
             this.mainGroupBox.Location = new System.Drawing.Point(26, 18);
             this.mainGroupBox.Name = "mainGroupBox";
-            this.mainGroupBox.Size = new System.Drawing.Size(764, 630);
+            this.mainGroupBox.Size = new System.Drawing.Size(1164, 630);
             this.mainGroupBox.TabIndex = 1;
             this.mainGroupBox.TabStop = false;
             this.mainGroupBox.Text = "鲶鱼精邮差";
@@ -133,24 +137,34 @@
             this.flowLayoutActions.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
             this.flowLayoutActions.Location = new System.Drawing.Point(19, 145);
             this.flowLayoutActions.Name = "flowLayoutActions";
-            this.flowLayoutActions.Size = new System.Drawing.Size(234, 385);
+            this.flowLayoutActions.Size = new System.Drawing.Size(234, 349);
             this.flowLayoutActions.TabIndex = 2;
+            // 
+            // ButtonCopySelection
+            // 
+            this.ButtonCopySelection.Location = new System.Drawing.Point(19, 492);
+            this.ButtonCopySelection.Name = "ButtonCopySelection";
+            this.ButtonCopySelection.Size = new System.Drawing.Size(234, 35);
+            this.ButtonCopySelection.TabIndex = 8;
+            this.ButtonCopySelection.Text = "复制所选日志";
+            this.ButtonCopySelection.UseVisualStyleBackColor = true;
+            this.ButtonCopySelection.Click += new System.EventHandler(this.cmdCopySelection_Click);
             // 
             // ButtonCopyProblematic
             // 
-            this.ButtonCopyProblematic.Location = new System.Drawing.Point(19, 536);
+            this.ButtonCopyProblematic.Location = new System.Drawing.Point(19, 533);
             this.ButtonCopyProblematic.Name = "ButtonCopyProblematic";
             this.ButtonCopyProblematic.Size = new System.Drawing.Size(234, 35);
             this.ButtonCopyProblematic.TabIndex = 7;
-            this.ButtonCopyProblematic.Text = "复制到剪贴板";
+            this.ButtonCopyProblematic.Text = "复制全部日志";
             this.ButtonCopyProblematic.UseVisualStyleBackColor = true;
             this.ButtonCopyProblematic.Click += new System.EventHandler(this.cmdCopyProblematic_Click);
             // 
             // ButtonClearMessage
             // 
-            this.ButtonClearMessage.Location = new System.Drawing.Point(21, 577);
+            this.ButtonClearMessage.Location = new System.Drawing.Point(19, 574);
             this.ButtonClearMessage.Name = "ButtonClearMessage";
-            this.ButtonClearMessage.Size = new System.Drawing.Size(232, 32);
+            this.ButtonClearMessage.Size = new System.Drawing.Size(234, 35);
             this.ButtonClearMessage.TabIndex = 6;
             this.ButtonClearMessage.Text = "清空日志";
             this.ButtonClearMessage.UseVisualStyleBackColor = true;
@@ -162,11 +176,20 @@
             this.lstMessages.ItemHeight = 24;
             this.lstMessages.Location = new System.Drawing.Point(259, 29);
             this.lstMessages.Name = "lstMessages";
-            this.lstMessages.Size = new System.Drawing.Size(485, 580);
+            this.lstMessages.SelectionMode = System.Windows.Forms.SelectionMode.MultiExtended;
+            this.lstMessages.Size = new System.Drawing.Size(885, 580);
             this.lstMessages.TabIndex = 5;
             this.lstMessages.HorizontalScrollbar = true;
             this.lstMessages.HorizontalExtent = 0;
-
+            this.lstMessages.MouseMove += new System.Windows.Forms.MouseEventHandler(lstMessages_MouseMove);
+            // 
+            // logTip
+            // 
+            this.logTip.AutoPopDelay = 32767;
+            this.logTip.InitialDelay = 200;
+            this.logTip.ReshowDelay = 200;
+            this.logTip.ShowAlways = true;
+            this.logTip.UseAnimation = true;
             // 
             // PostNamazuUi
             // 
@@ -174,7 +197,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.mainGroupBox);
             this.Name = "PostNamazuUi";
-            this.Size = new System.Drawing.Size(816, 662);
+            this.Size = new System.Drawing.Size(1216, 662);
             ((System.ComponentModel.ISupportInitialize)(this.TextPort)).EndInit();
             this.mainGroupBox.ResumeLayout(false);
             this.mainGroupBox.PerformLayout();
@@ -192,9 +215,11 @@
         public System.Windows.Forms.NumericUpDown TextPort;
         public System.Windows.Forms.Label lbPort;
         public System.Windows.Forms.GroupBox mainGroupBox;
+        public System.Windows.Forms.Button ButtonCopySelection;
         public System.Windows.Forms.Button ButtonCopyProblematic;
         public System.Windows.Forms.Button ButtonClearMessage;
         public System.Windows.Forms.ListBox lstMessages;
+        private System.Windows.Forms.ToolTip logTip;
         private System.Windows.Forms.FlowLayoutPanel flowLayoutActions;
         private System.Windows.Forms.Label label1;
     }

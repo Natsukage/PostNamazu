@@ -6,34 +6,29 @@ using GreyMagic;
 
 namespace PostNamazu.Actions
 {
-    internal class Command : NamazuModule
+    internal class NormalCommand : NamazuModule
     {
         private IntPtr ProcessChatBoxPtr;
-        private IntPtr UiModulePtr;
-        private IntPtr UiModule => SigScanner.ReadIntPtr(SigScanner.ReadIntPtr(UiModulePtr));
-        private IntPtr ModuleOffsetPtr;
-        private int ModuleOffset;
-        private IntPtr RaptureModule => UiModule + ModuleOffset;
+        private IntPtr FrameworkPtr;
+        private IntPtr GetUiModulePtr;
+        public IntPtr UiModulePtr;
 
         public override void GetOffsets()
         {
             base.GetOffsets();
-
-            //Compatible with some plugins of Dalamud
-            //ProcessChatBoxPtr = _scanner.ScanText("40 53 56 57 48 83 EC 70 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 44 24 ?? 48 8B 02");
-            ProcessChatBoxPtr = SigScanner.ScanText("E8 ?? ?? ?? ?? FE 86 ?? ?? ?? ?? C7 86");
-
-            UiModulePtr = SigScanner.GetStaticAddressFromSig("48 8B 05 ?? ?? ?? ?? 48 8B D9 8B 40 14 85 C0");
-            ModuleOffsetPtr = SigScanner.ScanText("48 8D 8F ?? ?? ?? ?? 4C 8B C7 48 8D 54 24 ??") + 3;
-            ModuleOffset = SigScanner.ReadInt32(ModuleOffsetPtr);
+            
+            ProcessChatBoxPtr = SigScanner.ScanText("48 89 5C 24 ?? 57 48 83 EC 20 48 8B FA 48 8B D9 45 84 C9");
+            FrameworkPtr = Memory.Read<IntPtr>(SigScanner.GetStaticAddressFromSig("44 0F B6 C0 48 8B 0D ?? ?? ?? ??", 7));
+            GetUiModulePtr = SigScanner.ScanText("E8 ?? ?? ?? ?? 80 7B 1D 01");
+            UiModulePtr = Memory.CallInjected64<IntPtr>(GetUiModulePtr, FrameworkPtr);
         }
 
         /// <summary>
         ///     执行给出的文本指令
         /// </summary>
         /// <param name="command">文本指令</param>
-        [Command("command")] [Command("DoTextCommand")]
-        public void DoTextCommand(string command)
+        [Command("normalcommand")] [Command("DoNormalTextCommand")]
+        public void DoNormalTextCommand(string command)
         {
             if (!isReady) 
                 throw new Exception("没有对应的游戏进程");
@@ -60,7 +55,7 @@ namespace PostNamazu.Actions
                 allocatedMemory.Write("t1", 0x40);
                 allocatedMemory.Write("tLength", array.Length + 1);
                 allocatedMemory.Write("t3", 0x00);
-                _ = Memory.CallInjected64<int>(ProcessChatBoxPtr, RaptureModule, allocatedMemory.Address, UiModule);
+                _ = Memory.CallInjected64<int>(ProcessChatBoxPtr, UiModulePtr,allocatedMemory.Address, IntPtr.Zero, (byte)0);
             }
             finally {
                 if (flag) Monitor.Exit(assemblyLock);

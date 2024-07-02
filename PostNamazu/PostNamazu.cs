@@ -223,7 +223,7 @@ namespace PostNamazu
             PluginUI.Log("Getting Offsets......");
             SigScanner = new SigScanner(FFXIV);
             try {
-                _entrancePtr = SigScanner.ScanText("4C 8B DC 53 56 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 48 83 B9");
+                _entrancePtr = SigScanner.ScanText("4C 8B DC 56 41 57 48 81 EC ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 84 24 ? ? ? ? 48 83 B9 ? ? ? ? ? 4C 8B FA");//7.0
                 return true;
             }
             catch (ArgumentOutOfRangeException) {

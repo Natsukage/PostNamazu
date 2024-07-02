@@ -10,22 +10,26 @@ namespace PostNamazu.Actions
 {
     internal class Preset : NamazuModule
     {
-        private IntPtr UIModulePtrPtr;
+        private IntPtr UIModulePtr;
         private Int32 WayMarkSlotOffset;
         public IntPtr MapIDPtr;
         
         public override void GetOffsets()
         {
             base.GetOffsets();
-            UIModulePtrPtr = SigScanner.GetStaticAddressFromSig("48 8B 05 ?? ?? ?? ?? 48 8B D9 8B 40 14 85 C0");
+            var sigAddress = SigScanner.ScanText("49 8B DC 48 89 1D");
+            IntPtr targetAddress = sigAddress + 10 + Memory.Read<int>(sigAddress+6);
+            var FrameworkPtr = Memory.Read<IntPtr>(targetAddress);
+            var GetUiModulePtr = SigScanner.ScanText("E8 ?? ?? ?? ?? 80 7B 1D 01");
+            UIModulePtr = Memory.CallInjected64<IntPtr>(GetUiModulePtr, FrameworkPtr);
 
-            var mapIDOffset = SigScanner.Read<UInt16>(SigScanner.ScanText("66 89 81 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 44 8B CF") + 3);
-            MapIDPtr = SigScanner.GetStaticAddressFromSig("48 8D 0D ?? ?? ?? ?? 0F B6 55 ??") + mapIDOffset;
+            var mapIDOffset = SigScanner.Read<UInt16>(SigScanner.ScanText("44 89 81 ? ? ? ? 0F B7 84 24") + 3);
+            MapIDPtr = SigScanner.GetStaticAddressFromSig("48 8D 0D ?? ?? ?? ?? 0F B6 55 ?? 24") + mapIDOffset;
         }
 
         private void GetWayMarkSlotOffset()
         {
-            var UIModuleSwitch = new SwitchParser(SigScanner, "8B 94 98 ?? ?? ?? ?? 48 03 D0 FF E2 49", 3);
+            var UIModuleSwitch = new SwitchParser(SigScanner, "8B 94 98 ?? ?? ?? ?? 48 03 D0 FF E2 49 8B 10", 3);
 
             //.text:000000014063AE36                        loc_14063AE36:; CODE XREF: sub_14063ACD0 + 32↑j
             //.text:000000014063AE36
@@ -37,8 +41,8 @@ namespace PostNamazu.Actions
             var Case0x11 = UIModuleSwitch.Case(0x11);
             var offset = SigScanner.Read<int>(Case0x11 + 14);
 
-            var UIModulePtr = SigScanner.Read<IntPtr>(UIModulePtrPtr);
-            var UIModule = SigScanner.Read<IntPtr>(UIModulePtr);
+            //var UIModulePtr = SigScanner.Read<IntPtr>(UIModulePtrPtr);
+            var UIModule = UIModulePtr;
             var FastCallAddressPtr = SigScanner.Read<IntPtr>(UIModule) + offset;
 
             var FastCallAddress = SigScanner.Read<IntPtr>(FastCallAddressPtr);
@@ -53,8 +57,8 @@ namespace PostNamazu.Actions
         {
             //var g_Framework_2 = MemoryService.Read<IntPtr>(g_Framework_2_Ptr);
             //var UIModule = MemoryService.Read<IntPtr>(g_Framework_2 + 0x29F8);
-            var UIModulePtr = SigScanner.Read<IntPtr>(UIModulePtrPtr);
-            var UIModule = SigScanner.Read<IntPtr>(UIModulePtr);
+            //var UIModulePtr = SigScanner.Read<IntPtr>(UIModulePtrPtr);
+            var UIModule = UIModulePtr;
 
             var WayMarkSlotPtr = UIModule + WayMarkSlotOffset;
             var WaymarkDataPointer = WayMarkSlotPtr + 64 + (int)(104 * (slotNum - 1));

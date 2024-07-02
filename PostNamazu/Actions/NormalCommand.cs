@@ -18,20 +18,17 @@ namespace PostNamazu.Actions
             base.GetOffsets();
             
             ProcessChatBoxPtr = SigScanner.ScanText("48 89 5C 24 ?? 57 48 83 EC 20 48 8B FA 48 8B D9 45 84 C9");
-            // 获取签名起始地址
+            
             var sigAddress = SigScanner.ScanText("49 8B DC 48 89 1D");
 
-            IntPtr targetAddress = sigAddress + 10 + unchecked((int)0x025380F3);
-
-            PluginUI.Log("tar:"+targetAddress.ToString("X"));
+            IntPtr targetAddress = sigAddress + 10 + Memory.Read<int>(sigAddress+6);
 
             FrameworkPtr = Memory.Read<IntPtr>(targetAddress);
             
-            //PluginUI.Log(FrameworkPtr);
             GetUiModulePtr = SigScanner.ScanText("E8 ?? ?? ?? ?? 80 7B 1D 01");
-            //PluginUI.Log(GetUiModulePtr);
+            
             UiModulePtr = Memory.CallInjected64<IntPtr>(GetUiModulePtr, FrameworkPtr);
-            //PluginUI.Log(UiModulePtr);
+            
         }
 
         /// <summary>

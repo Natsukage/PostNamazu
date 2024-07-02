@@ -10,29 +10,18 @@ namespace PostNamazu.Actions
     {
         private IntPtr ProcessChatBoxPtr;
         private IntPtr UiModulePtr;
-        private IntPtr UiModule => SigScanner.ReadIntPtr(SigScanner.ReadIntPtr(UiModulePtr));
-        private IntPtr ModuleOffsetPtr;
-        private int ModuleOffset;
-        private IntPtr RaptureModule => UiModule + ModuleOffset;
+        private IntPtr RaptureModule;
 
         public override void GetOffsets()
         {
             base.GetOffsets();
-
-            //Compatible with some plugins of Dalamud
-            //ProcessChatBoxPtr = _scanner.ScanText("40 53 56 57 48 83 EC 70 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 44 24 ?? 48 8B 02");
             ProcessChatBoxPtr = SigScanner.ScanText("E8 ?? ?? ?? ?? FE 86 ?? ?? ?? ?? C7 86");
-
-            //48 83 EC ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 44 24 ? 48 8B 0D ? ? ? ? E8 ? ? ? ? 48 85 C0
-            
-            var FrameworkPtr = Memory.Read<IntPtr>(SigScanner.GetStaticAddressFromSig("49 8B DC 48 89 1D ?? ?? ?? ??", 6));
+            var sigAddress = SigScanner.ScanText("49 8B DC 48 89 1D");
+            IntPtr targetAddress = sigAddress + 10 + Memory.Read<int>(sigAddress+6);
+            var FrameworkPtr = Memory.Read<IntPtr>(targetAddress);
             var GetUiModulePtr = SigScanner.ScanText("E8 ?? ?? ?? ?? 80 7B 1D 01");
             UiModulePtr = Memory.CallInjected64<IntPtr>(GetUiModulePtr, FrameworkPtr);
-            //PluginUI.Log(UiModulePtr);
-            UiModulePtr = SigScanner.ScanText("48 83 EC ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 44 24 ?? 48 8B 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 85 C0");
-            //PluginUI.Log(UiModulePtr);
-            ModuleOffsetPtr = SigScanner.ScanText("48 8D 8B ?? ?? ?? ?? C6 83 ?? ?? ?? ?? ?? 4C 8B C3 C7 83 ?? ?? ?? ?? ?? ?? ?? ?? 48 8D 54 24") + 3;
-            ModuleOffset = SigScanner.ReadInt32(ModuleOffsetPtr);
+            RaptureModule = Memory.CallInjected64<IntPtr>(Memory.Read<IntPtr>(Memory.Read<IntPtr>(UiModulePtr) + (0x8 * 9)), UiModulePtr);
         }
 
         /// <summary>
@@ -67,11 +56,12 @@ namespace PostNamazu.Actions
                 allocatedMemory.Write("t1", 0x40);
                 allocatedMemory.Write("tLength", array.Length + 1);
                 allocatedMemory.Write("t3", 0x00);
-                _ = Memory.CallInjected64<int>(ProcessChatBoxPtr, RaptureModule, allocatedMemory.Address, UiModule);
+                _ = Memory.CallInjected64<int>(ProcessChatBoxPtr, RaptureModule, allocatedMemory.Address, UiModulePtr);
             }
             finally {
                 if (flag) Monitor.Exit(assemblyLock);
             }
         }
     }
+    
 }

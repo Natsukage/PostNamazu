@@ -9,19 +9,18 @@ namespace PostNamazu.Actions
     internal class Command : NamazuModule
     {
         private IntPtr ProcessChatBoxPtr;
-        private IntPtr UiModulePtr;
-        private IntPtr RaptureModule;
+        private IntPtr GetUiModulePtr;
+        private IntPtr TargetAddress;
 
         public override void GetOffsets()
         {
             base.GetOffsets();
             ProcessChatBoxPtr = SigScanner.ScanText("E8 ?? ?? ?? ?? FE 86 ?? ?? ?? ?? C7 86");
             var sigAddress = SigScanner.ScanText("49 8B DC 48 89 1D");
-            IntPtr targetAddress = sigAddress + 10 + Memory.Read<int>(sigAddress+6);
-            var FrameworkPtr = Memory.Read<IntPtr>(targetAddress);
-            var GetUiModulePtr = SigScanner.ScanText("E8 ?? ?? ?? ?? 80 7B 1D 01");
-            UiModulePtr = Memory.CallInjected64<IntPtr>(GetUiModulePtr, FrameworkPtr);
-            RaptureModule = Memory.CallInjected64<IntPtr>(Memory.Read<IntPtr>(Memory.Read<IntPtr>(UiModulePtr) + (0x8 * 9)), UiModulePtr);
+            TargetAddress = sigAddress + 10 + Memory.Read<int>(sigAddress+6);
+            
+            GetUiModulePtr = SigScanner.ScanText("E8 ?? ?? ?? ?? 80 7B 1D 01");
+
         }
 
         /// <summary>
@@ -56,7 +55,9 @@ namespace PostNamazu.Actions
                 allocatedMemory.Write("t1", 0x40);
                 allocatedMemory.Write("tLength", array.Length + 1);
                 allocatedMemory.Write("t3", 0x00);
-                _ = Memory.CallInjected64<int>(ProcessChatBoxPtr, RaptureModule, allocatedMemory.Address, UiModulePtr);
+                var uiModulePtr = Memory.CallInjected64<IntPtr>(GetUiModulePtr, Memory.Read<IntPtr>(TargetAddress));
+                var raptureModule = Memory.CallInjected64<IntPtr>(Memory.Read<IntPtr>(Memory.Read<IntPtr>(uiModulePtr) + (0x8 * 9)), uiModulePtr);
+                _ = Memory.CallInjected64<int>(ProcessChatBoxPtr, raptureModule, allocatedMemory.Address, uiModulePtr);
             }
             finally {
                 if (flag) Monitor.Exit(assemblyLock);

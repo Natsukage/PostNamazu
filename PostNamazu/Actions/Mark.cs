@@ -23,7 +23,6 @@ namespace PostNamazu.Actions
             LocalMarkingFunc = base.SigScanner.ScanText("E8 ?? ?? ?? ?? 4C 8B C5 8B D7 48 8B CB E8");//正确
             MarkingController = SigScanner.GetStaticAddressFromSig("48 8D 0D ?? ?? ?? ?? 4C 8B 85",3);//正确
         }
-        //反正没人用,不如重构
         [Command("mark")]
         public void DoMarking(string command)
         {
@@ -33,18 +32,13 @@ namespace PostNamazu.Actions
             if (mark?.MarkType == null) {
                 throw new Exception(GetLocalizedString("Exception"));
             }
-            uint actorID = 0xE000000;
-            actorID = mark.ActorID ?? GetActorIDByName(mark.Name);
+            var actorID = mark.ActorID ?? GetActorIDByName(mark.Name);
             DoMarkingByActorID(actorID,mark.MarkType.Value,mark.LocalOnly);
         }
         private uint GetActorIDByName(string Name)
         {
             var combatant = FFXIV_ACT_Plugin.DataRepository.GetCombatantList().FirstOrDefault(i => i.Name != null && i.ID != 0xE0000000 && i.Name.Equals(Name));
-            if (combatant == null)
-            {
-                throw new Exception(GetLocalizedString("ActorNotFound", Name));
-            }
-            return combatant.ID;
+            return combatant?.ID ?? throw new Exception(GetLocalizedString("ActorNotFound", Name));
             //PluginUI.Log($"BNpcID={combatant.BNpcNameID},ActorID={combatant.ID:X},markingType={markingType}");
         }
         private void DoMarkingByActorID(uint ActorID, MarkType markingType, bool localOnly = false)
@@ -57,12 +51,12 @@ namespace PostNamazu.Actions
             PluginUI.Log($"ActorID={ActorID:X}, markingType={(int)markingType}, LocalOnly={localOnly}");
             var assemblyLock = Memory.Executor.AssemblyLock;
             var flag = false;
-            try {
+            try
+            {
                 Monitor.Enter(assemblyLock, ref flag);
-                if (!localOnly)
-                    _ = Memory.CallInjected64<char>(MarkingFunc, MarkingController, markingType, ActorID);
-                else //本地标点的markingType从0开始，因此需要-1
-                    _ = Memory.CallInjected64<char>(LocalMarkingFunc, MarkingController, markingType - 1, ActorID, 0);
+                _ = !localOnly
+                    ? Memory.CallInjected64<char>(MarkingFunc, MarkingController, markingType, ActorID) 
+                    : Memory.CallInjected64<char>(LocalMarkingFunc, MarkingController, markingType - 1, ActorID, 0); //本地标点的markingType从0开始，因此需要-1
             }
             finally {
                 if (flag) Monitor.Exit(assemblyLock);

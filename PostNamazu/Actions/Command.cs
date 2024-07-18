@@ -30,12 +30,7 @@ namespace PostNamazu.Actions
         [Command("command")] [Command("DoTextCommand")]
         public void DoTextCommand(string command)
         {
-            if (!isReady) 
-                throw new Exception("没有对应的游戏进程");
-            
-            if (command == "")
-                throw new Exception("指令为空");
-
+            CheckBeforeExecution(command);
             PluginUI.Log(command);
 
             var assemblyLock = Memory.Executor.AssemblyLock;

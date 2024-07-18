@@ -75,7 +75,7 @@ namespace PostNamazu.Actions
                 waymarks.MapID = SigScanner.Read<ushort>(MapIDPtr);
             if (waymarks.MapID == 0)
             {
-                Log("预设与当前地图ID均不合法，加载预设失败");
+                Log(I18n.Translate("Preset/MapIdIllegal", "预设与当前的地图 ID 均不合法，加载预设失败。"));
                 return;
             }
             GetWayMarkSlotOffset();
@@ -101,11 +101,7 @@ namespace PostNamazu.Actions
         [Command("preset")] [Command("DoInsertPreset")]
         public void DoInsertPreset(string waymarksStr)
         {
-            if (!isReady)
-                throw new Exception("没有对应的游戏进程");
-
-            if (waymarksStr == "")
-                throw new Exception("指令为空");
+            CheckBeforeExecution(waymarksStr);
 
             switch (waymarksStr.ToLower()) {
                 default:

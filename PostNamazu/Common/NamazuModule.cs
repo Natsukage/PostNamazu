@@ -5,7 +5,7 @@ using GreyMagic;
 
 namespace PostNamazu.Actions
 {
-    internal abstract class NamazuModule
+    public abstract class NamazuModule
     {
         protected PostNamazu PostNamazu;
         protected FFXIV_ACT_Plugin.FFXIV_ACT_Plugin FFXIV_ACT_Plugin => PostNamazu?.FFXIV_ACT_Plugin;
@@ -40,6 +40,16 @@ namespace PostNamazu.Actions
         {
             PluginUI?.Log(msg);
         }
+
+        public void CheckBeforeExecution(string command)
+        {
+            if (!isReady)
+                throw new Exception(I18n.Translate("NamazuModule/XivProcNotFound", "没有对应的 FFXIV 进程"));
+
+            if (string.IsNullOrWhiteSpace(command))
+                throw new Exception(I18n.Translate("NamazuModule/EmptyCommand", "指令为空"));
+        }
+
     }
 
 }

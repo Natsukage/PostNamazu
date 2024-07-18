@@ -2,6 +2,7 @@
 using PostNamazu.Attributes;
 using PostNamazu.Models;
 using Newtonsoft.Json;
+using PostNamazu.Common;
 
 namespace PostNamazu.Actions
 {
@@ -42,11 +43,7 @@ namespace PostNamazu.Actions
         [Command("place")] [Command("DoWaymarks")]
         public void DoWaymarks(string waymarksStr)
         {
-            if (!isReady)
-                throw new Exception("没有对应的游戏进程");
-
-            if (waymarksStr == "")
-                throw new Exception("指令为空");
+            CheckBeforeExecution(waymarksStr);
 
             switch (waymarksStr.ToLower()) {
                 case "save":
@@ -59,7 +56,7 @@ namespace PostNamazu.Actions
                     break;
                 case "reset":
                     tempMarks = null;
-                    PluginUI.Log("重置暂存标点");
+                    PluginUI.Log(I18n.Translate("WayMark/Reset", "已清除暂存的标点。"));
                     break;
                 case "clear":
                     DoWaymarks(new WayMarks { A = new Waymark(), B = new Waymark(), C = new Waymark(), D = new Waymark(), One = new Waymark(), Two = new Waymark(), Three = new Waymark(), Four = new Waymark() });
@@ -97,10 +94,10 @@ namespace PostNamazu.Actions
                 tempMarks.Two = ReadWaymark(Waymarks + 0xA0, WaymarkID.Two);
                 tempMarks.Three = ReadWaymark(Waymarks + 0xC0, WaymarkID.Three);
                 tempMarks.Four = ReadWaymark(Waymarks + 0xE0, WaymarkID.Four);
-                PluginUI.Log("暂存当前标点");
+                PluginUI.Log(I18n.Translate("WayMark/Save", "已暂存当前标点。"));
             }
             catch (Exception ex) {
-                throw new Exception("保存标记错误：" + ex.Message);
+                throw new Exception(I18n.Translate("WayMark/SaveException", "保存标记错误：\n{0}" + ex.Message));
             }
 
         }
@@ -113,7 +110,7 @@ namespace PostNamazu.Actions
             if (tempMarks == null)
                 return;
             DoWaymarks(tempMarks);
-            PluginUI.Log("恢复暂存标点");
+            PluginUI.Log(I18n.Translate("WayMark/Load", "已恢复暂存的标点。"));
         }
 
         /// <summary>

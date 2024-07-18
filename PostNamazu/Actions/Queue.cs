@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using PostNamazu.Attributes;
+using PostNamazu.Common;
 
 namespace PostNamazu.Actions
 {
@@ -17,11 +18,7 @@ namespace PostNamazu.Actions
         {
             try
             {
-                if (!isReady)
-                    throw new Exception("没有对应的游戏进程");
-
-                if (command == "")
-                    throw new Exception("指令为空");
+                CheckBeforeExecution(command);
                 var actions = JsonConvert.DeserializeObject<QueueAction[]>(command);
                 var qid = ""; //QueueID，为空时不会受到打断指令的影响
                 foreach (var action in actions)
@@ -55,7 +52,7 @@ namespace PostNamazu.Actions
                     });
                     if (qid != "" && !QueuePending.Contains(qid))
                     {
-                        Log($"队列{qid}被要求中断");
+                        Log(I18n.Translate("Queue/Broken", "队列 {0} 已被要求中断", qid));
                         break;
                     }
                 }
@@ -73,7 +70,7 @@ namespace PostNamazu.Actions
         [Command("BreakQueueActions")]
         public void BreakQueue(string command)
         {
-            Log($"要求打断{command}队列");
+            Log(I18n.Translate("Queue/Break", "要求打断队列：{0}", command));
             switch (command.ToLower())
             {
                 case "all":

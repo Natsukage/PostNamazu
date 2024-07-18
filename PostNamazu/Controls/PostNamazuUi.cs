@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using System.Xml;
 using Advanced_Combat_Tracker;
+using PostNamazu.Common;
 
 namespace PostNamazu
 {
@@ -16,6 +18,7 @@ namespace PostNamazu
             InitializeComponent();
             LoadSettings();
         }
+
         public bool AutoStart => CheckAutoStart.Checked;
         private static readonly string SettingsFile = Path.Combine(ActGlobals.oFormActMain.AppDataFolder.FullName, "Config\\PostNamazu.config.xml");
         public Dictionary<string, bool> ActionEnabled = new();
@@ -130,9 +133,24 @@ namespace PostNamazu
                     xdo.Load(SettingsFile);
                     XmlNode head = xdo.SelectSingleNode("Config");
                     TextPort.Text = head?.SelectSingleNode("Port")?.InnerText;
-                    if (string.IsNullOrEmpty(TextPort.Text)) 
+                    if (string.IsNullOrEmpty(TextPort.Text))
                         TextPort.Text = "2019";
                     CheckAutoStart.Checked = bool.Parse(head?.SelectSingleNode("AutoStart")?.InnerText ?? "false");
+
+                    string language = head?.SelectSingleNode("Language")?.InnerText;
+                    if (string.IsNullOrEmpty(language) || !Enum.TryParse(language, out I18n.CurrentLanguage))
+                    {
+                        I18n.CurrentLanguage = CultureInfo.CurrentCulture.TwoLetterISOLanguageName == "zh" ? I18n.Language.CN : I18n.Language.EN;
+                    }
+                    if (I18n.CurrentLanguage == I18n.Language.EN)
+                    {
+                        radioButtonEN.Checked = true;
+                    }
+                    else
+                    {
+                        radioButtonCN.Checked = true;
+                    }
+                    TranslateUi();
 
                     var actionList = head?.SelectSingleNode("Actions")?.ChildNodes;
                     if (actionList == null) return;
@@ -141,14 +159,14 @@ namespace PostNamazu
                 }
                 catch (Exception)
                 {
-                    Log("配置文件载入异常");
+                    Log(I18n.Translate("PostNamazuUi/CfgLoadException", "配置文件载入异常：\n{0}"));
                     File.Delete(SettingsFile);
-                    Log("已清除错误的配置文件");
-                    Log("设置已被重置");
+                    Log(I18n.Translate("PostNamazuUi/CfgReset", "已重置配置文件。"));
                 }
 
             }
         }
+
         public void SaveSettings()
         {
             FileStream fs = new FileStream(SettingsFile, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
@@ -157,6 +175,7 @@ namespace PostNamazu
             xWriter.WriteStartElement("Config");    // <Config>
             xWriter.WriteElementString("Port", TextPort.Text);
             xWriter.WriteElementString("AutoStart", CheckAutoStart.Checked.ToString());
+            xWriter.WriteElementString("Language", I18n.CurrentLanguage.ToString());
             xWriter.WriteStartElement("Actions");    // <Actions>
             foreach (var action in ActionEnabled)
                 xWriter.WriteElementString(action.Key,action.Value.ToString());
@@ -166,5 +185,43 @@ namespace PostNamazu
             xWriter.Flush();    // Flush the file buffer to disk
             xWriter.Close();
         }
+
+        private void LanguageRadioButton_CheckedChanged(object sender, EventArgs e)
+        {
+            if (radioButtonEN.Checked)
+            {
+                I18n.CurrentLanguage = I18n.Language.EN;
+            }
+            else if (radioButtonCN.Checked)
+            {
+                I18n.CurrentLanguage = I18n.Language.CN;
+            }
+            TranslateUi();
+        }
+
+        internal void TranslateUi()
+        {
+            this.SuspendLayout();
+            if (Parent != null) Parent.Text = I18n.Translate("PostNamazu", "鲶鱼精邮差");
+            RecursiveTranslateControls(this);
+            this.ResumeLayout(true);
+        }
+
+        private void RecursiveTranslateControls(Control control)
+        {
+            if (!string.IsNullOrEmpty(control.Text))
+            {
+                string text = I18n.TranslateUi(control.Name);
+                if (text != null)
+                {
+                    control.Text = text;
+                }
+            }
+            foreach (Control child in control.Controls)
+            {
+                RecursiveTranslateControls(child);
+            }
+        }
+
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using PostNamazu.Attributes;
+using PostNamazu.Common;
 
 namespace PostNamazu.Actions
 {
@@ -9,19 +10,15 @@ namespace PostNamazu.Actions
         [Command("sendkey")]
         public void DoSendKey(string command)
         {
-            if (!isReady)
-                throw new Exception("没有对应的游戏进程");
+            CheckBeforeExecution(command);
 
-            if (command == "")
-                throw new Exception("指令为空");
-
-            Log($"收到按键：{command}");
             try {
                 var keycode = int.Parse(command);
                 SendKeycode(keycode);
+                Log(I18n.Translate("SendKey/Success", "已发送按键：{0}", command));
             }
             catch (Exception ex) {
-                throw new Exception($"发送按键失败：{ex}");
+                throw new Exception(I18n.Translate("SendKey/Fail", "发送按键 {0} 失败：\n{1}", command, ex));
             }
         }
 

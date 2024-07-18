@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using PostNamazu.Attributes;
 using PostNamazu.Models;
+using PostNamazu.Common;
 
 namespace PostNamazu.Actions
 {
@@ -25,15 +26,11 @@ namespace PostNamazu.Actions
         [Command("mark")]
         public void DoMarking(string command)
         {
-            if (!isReady)
-                throw new Exception("没有对应的游戏进程");
-
-            if (command == "")
-                throw new Exception("指令为空");
+            CheckBeforeExecution(command);
 
             var mark=JsonConvert.DeserializeObject<Marking>(command);
             if (mark?.MarkType == null) {
-                throw new Exception("标记错误");
+                throw new Exception(I18n.Translate("Mark/Exception", "实体标点格式错误。"));
             }
             uint actorID = 0xE000000;
             actorID = mark.ActorID ?? GetActorIDByName(mark.Name);
@@ -43,7 +40,7 @@ namespace PostNamazu.Actions
         {
             var combatant = FFXIV_ACT_Plugin.DataRepository.GetCombatantList().FirstOrDefault(i => i.Name != null && i.ID != 0xE0000000 && i.Name.Equals(Name));
             if (combatant == null) {
-                throw new Exception($"未能找到{Name}");
+                throw new Exception(I18n.Translate("Mark/ActorNotFound", "未能找到实体： {0}", Name));
             }
             return combatant.ID;
             //PluginUI.Log($"BNpcID={combatant.BNpcNameID},ActorID={combatant.ID:X},markingType={markingType}");
@@ -51,10 +48,10 @@ namespace PostNamazu.Actions
         private void DoMarkingByActorID(uint ActorID, MarkType markingType, bool localOnly = false)
         {
             var combatant = FFXIV_ACT_Plugin.DataRepository.GetCombatantList().FirstOrDefault(i => i.ID == ActorID);
-            if (ActorID != 0xE000000 &&  combatant == null) {
-                throw new Exception($"未能找到{ActorID}");
+            if (ActorID != 0xE0000000 && combatant == null) {
+                throw new Exception(I18n.Translate("Mark/ActorNotFound", "未能找到实体： {0}", ActorID));
             }
-            PluginUI.Log($"ActorID={ActorID:X},markingType={(int)markingType},LocalOnly={localOnly}");
+            PluginUI.Log($"ActorID={ActorID:X}, markingType={(int)markingType}, LocalOnly={localOnly}");
             var assemblyLock = Memory.Executor.AssemblyLock;
             var flag = false;
             try {

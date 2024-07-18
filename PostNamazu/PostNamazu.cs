@@ -32,8 +32,8 @@ namespace PostNamazu
 
         internal Process FFXIV;
         internal FFXIV_ACT_Plugin.FFXIV_ACT_Plugin FFXIV_ACT_Plugin;
-        internal ExternalProcessMemory Memory;
-        internal SigScanner SigScanner;
+        public ExternalProcessMemory Memory;
+        public SigScanner SigScanner;
 
         private IntPtr _entrancePtr;
         public Dictionary<string, bool> ActionEnabled => PluginUI.ActionEnabled; //直接使用UI控件上的ActionEnabled状态
@@ -44,13 +44,13 @@ namespace PostNamazu
         #region Init
         public void InitPlugin(TabPage pluginScreenSpace, Label pluginStatusText)
         {
-            pluginScreenSpace.Text = "鲶鱼精邮差";
+            pluginScreenSpace.Text = I18n.Translate("PostNamazu", "鲶鱼精邮差");
             _lblStatus = pluginStatusText;
 
             PluginUI = new PostNamazuUi();
             pluginScreenSpace.Controls.Add(PluginUI);
 
-            PluginUI.Log($"插件版本:{Assembly.GetExecutingAssembly().GetName().Version}");
+            PluginUI.Log(I18n.Translate("PostNamazu/PluginVersion", "插件版本：{0}。", Assembly.GetExecutingAssembly().GetName().Version));
 
             FFXIV_ACT_Plugin = GetFFXIVPlugin();
 
@@ -70,7 +70,7 @@ namespace PostNamazu
             TriggIntegration();
             OverlayIntegration();
 
-            _lblStatus.Text = "鲶鱼精邮差已启动";
+            _lblStatus.Text = I18n.Translate("PostNamazu/PluginInit", "鲶鱼精邮差已启动。");
         }
 
         public void DeInitPlugin()
@@ -83,7 +83,7 @@ namespace PostNamazu
             if (_httpServer != null) ServerStop();
             _processSwitcher.CancelAsync();
             
-            _lblStatus.Text = "鲶鱼精邮差已退出";
+            _lblStatus.Text = I18n.Translate("PostNamazu/PluginDeInit", "鲶鱼精邮差已退出。");
         }
 
 
@@ -127,7 +127,7 @@ namespace PostNamazu
 
                 PluginUI.ButtonStart.Enabled = false;
                 PluginUI.ButtonStop.Enabled = true;
-                PluginUI.Log($"在{_httpServer.Port}端口启动监听");
+                PluginUI.Log(I18n.Translate("PostNamazu/HttpStart", "在 {0} 端口启动 HTTP 监听。", _httpServer.Port));
             }
             catch (Exception ex) {
                 OnException(ex);
@@ -145,7 +145,7 @@ namespace PostNamazu
 
             PluginUI.ButtonStart.Enabled = true;
             PluginUI.ButtonStop.Enabled = false;
-            PluginUI.Log("已停止监听");
+            PluginUI.Log(I18n.Translate("PostNamazu/HttpStop", "已停止 HTTP 监听。"));
         }
 
         /// <summary>
@@ -154,7 +154,7 @@ namespace PostNamazu
         /// <param name="ex"></param>
         private void OnException(Exception ex)
         {
-            string errorMessage = $"无法在{_httpServer.Port}端口启动监听\n{ex.Message}";
+            string errorMessage = I18n.Translate("PostNamazu/HttpException", "无法在 {0} 端口启动监听：\n{1}", _httpServer.Port, ex.Message);
 
             PluginUI.ButtonStart.Enabled = true;
             PluginUI.ButtonStop.Enabled = false;
@@ -170,10 +170,14 @@ namespace PostNamazu
         {
             try {
                 Memory = new ExternalProcessMemory(FFXIV, true, false, _entrancePtr, false, 5, true);
-                PluginUI.Log($"已找到FFXIV进程 {FFXIV.Id}");
+                PluginUI.Log(I18n.Translate("PostNamazu/XivProcInject", "已找到 FFXIV 进程 {0}。", FFXIV.Id));
             }
             catch (Exception ex) {
-                MessageBox.Show($"注入进程时发生错误！\n{ex}", "鲶鱼精邮差", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(
+                    I18n.Translate("PostNamazu/XivProcInjectException", "注入 FFXIV 进程时发生错误！\n{0}", ex),
+                    I18n.Translate("PostNamazu", "鲶鱼精邮差"), 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error
+                    );
                 Detach();
             }
             foreach (var m in Modules) {
@@ -202,7 +206,8 @@ namespace PostNamazu
         private FFXIV_ACT_Plugin.FFXIV_ACT_Plugin GetFFXIVPlugin()
         {
             var plugin = ActGlobals.oFormActMain.ActPlugins.FirstOrDefault(x => x.pluginObj?.GetType().ToString() == "FFXIV_ACT_Plugin.FFXIV_ACT_Plugin")?.pluginObj;
-            return (FFXIV_ACT_Plugin.FFXIV_ACT_Plugin)plugin ?? throw new Exception("找不到FFXIV解析插件，请确保其加载顺序位于鲶鱼精邮差之前。");
+            return (FFXIV_ACT_Plugin.FFXIV_ACT_Plugin)plugin 
+                ?? throw new Exception(I18n.Translate("PostNamazu/ParserNotFound", "找不到 FFXIV 解析插件，请确保其加载顺序位于鲶鱼精邮差之前。"));
         }
 
         /// <summary>
@@ -220,14 +225,14 @@ namespace PostNamazu
         /// <returns>返回是否成功找到入口地址</returns>
         private bool GetOffsets()
         {
-            PluginUI.Log("Getting Offsets......");
+            PluginUI.Log(I18n.Translate("PostNamazu/SigScanning", "正在扫描内存特征……"));
             SigScanner = new SigScanner(FFXIV);
             try {
-                _entrancePtr = SigScanner.ScanText("4C 8B DC 56 41 57 48 81 EC ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 84 24 ? ? ? ? 48 83 B9 ? ? ? ? ? 4C 8B FA");//7.0
+                _entrancePtr = SigScanner.ScanText("4C 8B DC 56 41 57 48 81 EC ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 84 24 ? ? ? ? 48 83 B9 ? ? ? ? ? 4C 8B FA"); //7.0
                 return true;
             }
             catch (ArgumentOutOfRangeException) {
-                //PluginUI.Log("无法对当前进程注入\n可能是已经被其他进程注入了");
+                //PluginUI.Log(I18n.Translate("PostNamazu/XivProcInjectFail", "无法对当前进程注入，可能是已经被其他进程注入了？"));
             }
 
             try {
@@ -235,7 +240,7 @@ namespace PostNamazu
                 return true;
             }
             catch (ArgumentOutOfRangeException) {
-                PluginUI.Log("无法对当前进程注入\n可能是已经被其他进程注入了？");
+                PluginUI.Log(I18n.Translate("PostNamazu/XivProcInjectFail", "无法对当前进程注入，可能是已经被其他进程注入了？"));
             }
             return false;
         }
@@ -257,11 +262,8 @@ namespace PostNamazu
                 if (FFXIV != GetFFXIVProcess()) {
                     Detach();
                     FFXIV = GetFFXIVProcess();
-                    if (FFXIV != null)
-                        if (FFXIV.ProcessName == "ffxiv")
-                            PluginUI.Log("错误：游戏运行于DX9模式下");
-                        else if (GetOffsets()) 
-                            Attach();
+                    if (FFXIV != null && GetOffsets())
+                        Attach();
                 }
                 Thread.Sleep(3000);
             }
@@ -275,12 +277,12 @@ namespace PostNamazu
             try {
                 var plugin = ActGlobals.oFormActMain.ActPlugins.FirstOrDefault(x => x.pluginObj?.GetType().ToString() == "TriggernometryProxy.ProxyPlugin")?.pluginObj;
                 if (plugin == null) {
-                    PluginUI.Log("没有找到Triggernometry");
+                    PluginUI.Log(I18n.Translate("PostNamazu/TrigNotFound", "没有找到 Triggernometry。"));
                     return;
                 }
-                PluginUI.Log("绑定Triggernometry");
                 _triggerHoster = new TriggerHoster.Program(plugin) { PostNamazuDelegate = DoAction };
                 _triggerHoster.Init(CmdBind.Keys.ToArray());
+                PluginUI.Log(I18n.Translate("PostNamazu/Trig", "已绑定 Triggernometry。"));
             }
             catch (Exception ex) {
                 PluginUI.Log(ex.Message);
@@ -295,12 +297,12 @@ namespace PostNamazu
             try {
                 var plugin = ActGlobals.oFormActMain.ActPlugins.FirstOrDefault(x => x.pluginObj?.GetType().ToString() == "RainbowMage.OverlayPlugin.PluginLoader")?.pluginObj;
                 if (plugin == null) {
-                    PluginUI.Log("没有找到OverlayPlugin");
+                    PluginUI.Log(I18n.Translate("PostNamazu/OPNotFound", "没有找到 OverlayPlugin。"));
                     return;
                 }
-                PluginUI.Log("绑定OverlayPlugin");
                 _overlayHoster = new OverlayHoster.Program { PostNamazuDelegate = DoAction };
                 _overlayHoster.Init();
+                PluginUI.Log(I18n.Translate("PostNamazu/OP", "已绑定 OverlayPlugin。"));
             }
             catch (Exception ex) {
                 PluginUI.Log(ex.Message);
@@ -321,7 +323,7 @@ namespace PostNamazu
                 if (FFXIV != null)
                     if (GetOffsets())
                         Attach();
-                PluginUI.Log($"已切换至进程{tProcess.Id}");
+                I18n.Translate("PostNamazu/XivProcSwitch", "已切换至 FFXIV 进程 {0}。", tProcess.Id);
             }
         }
 
@@ -364,7 +366,7 @@ namespace PostNamazu
                 if (ActionEnabled.ContainsKey(reflectedType) && ActionEnabled[reflectedType]) //不响应没有启用的动作
                     GetAction(command)(payload);
                 else
-                    PluginUI.Log($"忽略动作：{command}:{payload}");
+                    PluginUI.Log(I18n.Translate("PostNamazu/ActionIgnored", "忽略动作：{0}: {1}", command, payload));
             }
             catch (Exception ex) {
                 PluginUI.Log(ex.ToString());
@@ -392,7 +394,7 @@ namespace PostNamazu
                 return CmdBind[command];
             }
             catch {
-                throw new Exception($@"不支持的操作{command}");
+                throw new Exception(I18n.Translate("PostNamazu/ActionNotFound", "不支持的操作：{0}。", command));
             }
         }
 

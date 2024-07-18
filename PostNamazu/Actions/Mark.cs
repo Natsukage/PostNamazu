@@ -50,7 +50,7 @@ namespace PostNamazu.Actions
         private void DoMarkingByActorID(uint ActorID, MarkType markingType, bool localOnly = false)
         {
             var combatant = FFXIV_ACT_Plugin.DataRepository.GetCombatantList().FirstOrDefault(i => i.ID == ActorID);
-            if (ActorID != 0xE0000000 && combatant == null)
+            if (ActorID is not (0xE0000000 or 0xE000000) && combatant == null)
             {
                 throw new Exception(GetLocalizedString("ActorNotFound", ActorID));
             }

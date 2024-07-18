@@ -5,6 +5,7 @@ using PostNamazu.Models;
 using Newtonsoft.Json;
 using PostNamazu.Common;
 using System.Text.RegularExpressions;
+using static PostNamazu.Common.I18n;
 
 namespace PostNamazu.Actions
 {
@@ -13,7 +14,7 @@ namespace PostNamazu.Actions
         private IntPtr UIModulePtr;
         private Int32 WayMarkSlotOffset;
         public IntPtr MapIDPtr;
-        
+
         public override void GetOffsets()
         {
             base.GetOffsets();
@@ -75,7 +76,7 @@ namespace PostNamazu.Actions
                 waymarks.MapID = SigScanner.Read<ushort>(MapIDPtr);
             if (waymarks.MapID == 0)
             {
-                Log(I18n.Translate("Preset/MapIdIllegal", "预设与当前的地图 ID 均不合法，加载预设失败。"));
+                Log(GetLocalizedString("MapIdIllegal"));
                 return;
             }
             GetWayMarkSlotOffset();
@@ -152,5 +153,13 @@ namespace PostNamazu.Actions
             //	Send it out.
             return byteData.ToArray();
         }
+        protected override Dictionary<string, Dictionary<Language, string>> LocalizedStrings { get; } = new()
+        {
+            ["MapIdIllegal"] = new()
+            {
+                [Language.EN] = "Preset and current map ID are both invalid, loading preset failed.",
+                [Language.CN] = "预设与当前的地图 ID 均不合法，加载预设失败。"
+            },
+        };
     }
 }

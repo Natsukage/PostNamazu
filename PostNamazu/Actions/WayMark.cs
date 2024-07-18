@@ -2,7 +2,8 @@
 using PostNamazu.Attributes;
 using PostNamazu.Models;
 using Newtonsoft.Json;
-using PostNamazu.Common;
+using System.Collections.Generic;
+using static PostNamazu.Common.I18n;
 
 namespace PostNamazu.Actions
 {
@@ -56,7 +57,7 @@ namespace PostNamazu.Actions
                     break;
                 case "reset":
                     tempMarks = null;
-                    PluginUI.Log(I18n.Translate("WayMark/Reset", "已清除暂存的标点。"));
+                    PluginUI.Log(GetLocalizedString("Reset"));
                     break;
                 case "clear":
                     DoWaymarks(new WayMarks { A = new Waymark(), B = new Waymark(), C = new Waymark(), D = new Waymark(), One = new Waymark(), Two = new Waymark(), Three = new Waymark(), Four = new Waymark() });
@@ -94,10 +95,10 @@ namespace PostNamazu.Actions
                 tempMarks.Two = ReadWaymark(Waymarks + 0xA0, WaymarkID.Two);
                 tempMarks.Three = ReadWaymark(Waymarks + 0xC0, WaymarkID.Three);
                 tempMarks.Four = ReadWaymark(Waymarks + 0xE0, WaymarkID.Four);
-                PluginUI.Log(I18n.Translate("WayMark/Save", "已暂存当前标点。"));
+                PluginUI.Log(GetLocalizedString("Save"));
             }
             catch (Exception ex) {
-                throw new Exception(I18n.Translate("WayMark/SaveException", "保存标记错误：\n{0}" + ex.Message));
+                throw new Exception(GetLocalizedString("SaveException", ex.Message));
             }
 
         }
@@ -110,7 +111,7 @@ namespace PostNamazu.Actions
             if (tempMarks == null)
                 return;
             DoWaymarks(tempMarks);
-            PluginUI.Log(I18n.Translate("WayMark/Load", "已恢复暂存的标点。"));
+            PluginUI.Log(GetLocalizedString("Load"));
         }
 
         /// <summary>
@@ -150,6 +151,28 @@ namespace PostNamazu.Actions
             // Write the active state
             Memory.Write(markAddr + 0x1C, (byte)(waymark.Active ? 1 : 0));
         }
-
+        protected override Dictionary<string, Dictionary<Language, string>> LocalizedStrings { get; } = new()
+        {
+            ["Load"] = new()
+            {
+                [Language.EN] = "Waymark cache restored",
+                [Language.CN] = "已恢复暂存的标点"
+            },
+            ["Reset"] = new()
+            {
+                [Language.EN] = "Waymark cache cleared",
+                [Language.CN] = "已清除暂存的标点"
+            },
+            ["Save"] = new()
+            {
+                [Language.EN] = "Current waymark saved to cache",
+                [Language.CN] = "已暂存当前标点。"
+            },
+            ["SaveException"] = new()
+            {
+                [Language.EN] = "Exception occurred when saving waymarks: \n{0}",
+                [Language.CN] = "保存标记错误：\n{0}"
+            },
+        };
     }
 }

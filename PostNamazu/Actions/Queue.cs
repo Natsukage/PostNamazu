@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using PostNamazu.Attributes;
-using PostNamazu.Common;
+using static PostNamazu.Common.I18n;
 
 namespace PostNamazu.Actions
 {
@@ -52,7 +52,7 @@ namespace PostNamazu.Actions
                     });
                     if (qid != "" && !QueuePending.Contains(qid))
                     {
-                        Log(I18n.Translate("Queue/Broken", "队列 {0} 已被要求中断", qid));
+                        Log(GetLocalizedString("Broken", qid));
                         break;
                     }
                 }
@@ -70,7 +70,7 @@ namespace PostNamazu.Actions
         [Command("BreakQueueActions")]
         public void BreakQueue(string command)
         {
-            Log(I18n.Translate("Queue/Break", "要求打断队列：{0}", command));
+            Log(GetLocalizedString("Break",  command));
             switch (command.ToLower())
             {
                 case "all":
@@ -81,7 +81,19 @@ namespace PostNamazu.Actions
                     break;
             }
         }
-
+        protected override Dictionary<string, Dictionary<Language, string>> LocalizedStrings { get; } = new()
+        {
+            ["Break"] = new()
+            {
+                [Language.EN] = "Request to interrupt queue: {0}",
+                [Language.CN] = "要求打断队列：{0}"
+            },
+            ["Broken"] = new()
+            {
+                [Language.EN] = "Queue {0} has been requested to interrupt",
+                [Language.CN] = "队列 {0} 已被要求中断"
+            },
+        };
         public class QueueAction
         {
             [JsonProperty]

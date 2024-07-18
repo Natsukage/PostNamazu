@@ -1,8 +1,8 @@
-﻿using System;
+﻿using GreyMagic;
+using PostNamazu.Attributes;
+using System;
 using System.Text;
 using System.Threading;
-using PostNamazu.Attributes;
-using GreyMagic;
 
 namespace PostNamazu.Actions
 {
@@ -17,10 +17,8 @@ namespace PostNamazu.Actions
             base.GetOffsets();
             ProcessChatBoxPtr = SigScanner.ScanText("E8 ?? ?? ?? ?? FE 86 ?? ?? ?? ?? C7 86");
             var sigAddress = SigScanner.ScanText("49 8B DC 48 89 1D");
-            TargetAddress = sigAddress + 10 + Memory.Read<int>(sigAddress+6);
-            
+            TargetAddress = sigAddress + 10 + Memory.Read<int>(sigAddress + 6);
             GetUiModulePtr = SigScanner.ScanText("E8 ?? ?? ?? ?? 80 7B 1D 01");
-
         }
 
         /// <summary>

@@ -9,26 +9,16 @@ namespace PostNamazu.Actions
     internal class NormalCommand : NamazuModule
     {
         private IntPtr ProcessChatBoxPtr;
-        private IntPtr FrameworkPtr;
         private IntPtr GetUiModulePtr;
-        public IntPtr UiModulePtr;
+        private IntPtr TargetAddress;
 
         public override void GetOffsets()
         {
             base.GetOffsets();
-            
             ProcessChatBoxPtr = SigScanner.ScanText("48 89 5C 24 ?? 57 48 83 EC 20 48 8B FA 48 8B D9 45 84 C9");
-            
             var sigAddress = SigScanner.ScanText("49 8B DC 48 89 1D");
-
-            IntPtr targetAddress = sigAddress + 10 + Memory.Read<int>(sigAddress+6);
-
-            FrameworkPtr = Memory.Read<IntPtr>(targetAddress);
-            
+            TargetAddress = sigAddress + 10 + Memory.Read<int>(sigAddress + 6);
             GetUiModulePtr = SigScanner.ScanText("E8 ?? ?? ?? ?? 80 7B 1D 01");
-            
-            UiModulePtr = Memory.CallInjected64<IntPtr>(GetUiModulePtr, FrameworkPtr);
-            
         }
 
         /// <summary>
@@ -59,7 +49,8 @@ namespace PostNamazu.Actions
                 allocatedMemory.Write("t1", 0x40);
                 allocatedMemory.Write("tLength", array.Length + 1);
                 allocatedMemory.Write("t3", 0x00);
-                _ = Memory.CallInjected64<int>(ProcessChatBoxPtr, UiModulePtr,allocatedMemory.Address, IntPtr.Zero, (byte)0);
+                var uiModulePtr = Memory.CallInjected64<IntPtr>(GetUiModulePtr, Memory.Read<IntPtr>(TargetAddress));
+                _ = Memory.CallInjected64<int>(ProcessChatBoxPtr, uiModulePtr,allocatedMemory.Address, IntPtr.Zero, (byte)0);
             }
             finally {
                 if (flag) Monitor.Exit(assemblyLock);

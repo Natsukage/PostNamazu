@@ -2,6 +2,8 @@
 using System.Diagnostics;
 using PostNamazu.Common;
 using GreyMagic;
+using System.Collections.Generic;
+using static PostNamazu.Common.I18n;
 
 namespace PostNamazu.Actions
 {
@@ -50,6 +52,14 @@ namespace PostNamazu.Actions
                 throw new Exception(I18n.Translate("NamazuModule/EmptyCommand", "指令为空"));
         }
 
+        protected virtual Dictionary<string, Dictionary<Language, string>> LocalizedStrings { get; } = new();
+
+        protected string GetLocalizedString(string key, params object[] args)
+        {
+            if (LocalizedStrings.TryGetValue(key, out var translations) && translations.TryGetValue(CurrentLanguage, out var localizedString))
+                return string.Format(localizedString, args);
+            return key;
+        }
     }
 
 }

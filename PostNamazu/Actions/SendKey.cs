@@ -1,7 +1,8 @@
-﻿using System;
+﻿using PostNamazu.Attributes;
+using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using PostNamazu.Attributes;
-using PostNamazu.Common;
+using static PostNamazu.Common.I18n;
 
 namespace PostNamazu.Actions
 {
@@ -15,10 +16,11 @@ namespace PostNamazu.Actions
             try {
                 var keycode = int.Parse(command);
                 SendKeycode(keycode);
-                Log(I18n.Translate("SendKey/Success", "已发送按键：{0}", command));
+
+                Log(GetLocalizedString("Success", command));
             }
             catch (Exception ex) {
-                throw new Exception(I18n.Translate("SendKey/Fail", "发送按键 {0} 失败：\n{1}", command, ex));
+                throw new Exception(GetLocalizedString("Fail", command, ex));
             }
         }
 
@@ -43,6 +45,18 @@ namespace PostNamazu.Actions
         [DllImport("user32.dll")]
         public static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
         #endregion
-
+        protected override Dictionary<string, Dictionary<Language, string>> LocalizedStrings { get; } = new()
+        {
+            ["Success"] = new()
+            {
+                [Language.EN] = "Key sent: {0}",
+                [Language.CN] = "已发送按键：{0}"
+            },
+            ["Fail"] = new()
+            {
+                [Language.EN] = "Failed to send key {0}: \n{1}",
+                [Language.CN] = "发送按键 {0} 失败：\n{1}"
+            },
+        };
     }
 }

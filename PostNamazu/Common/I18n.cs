@@ -28,8 +28,6 @@ namespace PostNamazu.Common
 
         private static readonly Dictionary<string, string> TranslationsEN = new()
         {
-            ["Mark/ActorNotFound"] = "Could not find actor: {0}",
-            ["Mark/Exception"] = "Invalid format for actor marker.",
             ["NamazuModule/EmptyCommand"] = "Empty command.",
             ["NamazuModule/XivProcNotFound"] = "FFXIV process not found.",
             ["PostNamazu"] = "PostNamazu",
@@ -53,15 +51,6 @@ namespace PostNamazu.Common
             ["PostNamazu/XivProcSwitch"] = "Switched to FFXIV process {0}.",
             ["PostNamazuUi/CfgLoadException"] = "Exception occurred when loading configuration file: \n{0}",
             ["PostNamazuUi/CfgReset"] = "Configuration has been reset.",
-            ["Preset/MapIdIllegal"] = "Preset and current map ID are both invalid, loading preset failed.",
-            ["Queue/Break"] = "Request to interrupt queue: {0}",
-            ["Queue/Broken"] = "Queue {0} has been requested to interrupt",
-            ["SendKey/Fail"] = "Failed to send key {0}: \n{1}",
-            ["SendKey/Success"] = "Key sent: {0}",
-            ["WayMark/Load"] = "Waymark cache restored.",
-            ["WayMark/Reset"] = "Waymark cache cleared.",
-            ["WayMark/Save"] = "Current waymark saved to cache.",
-            ["WayMark/SaveException"] = "Exception occurred when saving waymarks: \n{0}"
         };
 
         public static string Translate(string key, string CN, params object[] args)

@@ -44,12 +44,11 @@ namespace PostNamazu
         #region Init
         public void InitPlugin(TabPage pluginScreenSpace, Label pluginStatusText)
         {
-            pluginScreenSpace.Text = I18n.Translate("PostNamazu", "鲶鱼精邮差");
             _lblStatus = pluginStatusText;
 
             PluginUI = new PostNamazuUi();
             pluginScreenSpace.Controls.Add(PluginUI);
-
+            pluginScreenSpace.Text = I18n.Translate("PostNamazu", "鲶鱼精邮差");
             PluginUI.Log(I18n.Translate("PostNamazu/PluginVersion", "插件版本：{0}。", Assembly.GetExecutingAssembly().GetName().Version));
 
             FFXIV_ACT_Plugin = GetFFXIVPlugin();

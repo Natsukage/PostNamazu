@@ -16,8 +16,8 @@ namespace PostNamazu.Actions
         {
             base.GetOffsets();
             ProcessChatBoxPtr = SigScanner.ScanText("48 89 5C 24 ?? 57 48 83 EC 20 48 8B FA 48 8B D9 45 84 C9");
-            var sigAddress = SigScanner.ScanText("49 8B DC 48 89 1D");
-            TargetAddress = sigAddress + 10 + Memory.Read<int>(sigAddress + 6);
+            var sigAddress = SigScanner.ScanText("49 8B C4 48 8B 0D");
+            TargetAddress = sigAddress + 24 + Memory.Read<int>(sigAddress + 20);
             GetUiModulePtr = SigScanner.ScanText("E8 ?? ?? ?? ?? 80 7B 1D 01");
         }
 

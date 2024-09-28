@@ -18,8 +18,8 @@ namespace PostNamazu.Actions
         public override void GetOffsets()
         {
             base.GetOffsets();
-            var sigAddress = SigScanner.ScanText("49 8B DC 48 89 1D");
-            IntPtr targetAddress = sigAddress + 10 + Memory.Read<int>(sigAddress+6);
+            var sigAddress = SigScanner.ScanText("49 8B C4 48 8B 0D");
+            IntPtr targetAddress = sigAddress + 24 + Memory.Read<int>(sigAddress+20);
             var FrameworkPtr = Memory.Read<IntPtr>(targetAddress);
             var GetUiModulePtr = SigScanner.ScanText("E8 ?? ?? ?? ?? 80 7B 1D 01");
             UIModulePtr = Memory.CallInjected64<IntPtr>(GetUiModulePtr, FrameworkPtr);

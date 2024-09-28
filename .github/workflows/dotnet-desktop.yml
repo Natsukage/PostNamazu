@@ -38,7 +38,7 @@ jobs:
         dotnet build --configuration Release
 
     - name: Upload PostNamazu.dll as artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4 # 更新为 v4
       with:
         name: PostNamazu.dll
         path: PostNamazu/bin/Release/netstandard2.0/PostNamazu.dll

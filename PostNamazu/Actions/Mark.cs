@@ -27,41 +27,43 @@ namespace PostNamazu.Actions
         public void DoMarking(string command)
         {
             CheckBeforeExecution(command);
-
-            var mark=JsonConvert.DeserializeObject<Marking>(command);
+            var mark = JsonConvert.DeserializeObject<Marking>(command);
             if (mark?.MarkType == null) {
                 throw new Exception(GetLocalizedString("Exception"));
             }
-            var actorID = mark.ActorID ?? GetActorIDByName(mark.Name);
-            DoMarkingByActorID(actorID,mark.MarkType.Value,mark.LocalOnly);
+            var actor = GetActor(mark.ActorID, mark.Name);
+            MarkActor(actor, mark.MarkType.Value, mark.Log, mark.LocalOnly);
         }
-        private uint GetActorIDByName(string Name)
+
+        private FFXIV_ACT_Plugin.Common.Models.Combatant GetActor(uint? id, string name)
         {
-            var combatant = FFXIV_ACT_Plugin.DataRepository.GetCombatantList().FirstOrDefault(i => i.Name != null && i.ID != 0xE0000000 && i.Name.Equals(Name));
-            return combatant?.ID ?? throw new Exception(GetLocalizedString("ActorNotFound", Name));
+            var combatants = FFXIV_ACT_Plugin.DataRepository.GetCombatantList().Where(i => !string.IsNullOrEmpty(i.Name) && i.ID != 0xE0000000);
+            return combatants.FirstOrDefault(i => i.ID == id) 
+                ?? combatants.FirstOrDefault(i => i.Name == name)
+                ?? throw new Exception(GetLocalizedString("ActorNotFound", id?.ToString("X8") ?? name ?? "(null)"));
             //PluginUI.Log($"BNpcID={combatant.BNpcNameID},ActorID={combatant.ID:X},markingType={markingType}");
         }
-        private void DoMarkingByActorID(uint ActorID, MarkType markingType, bool localOnly = false)
+
+        private void MarkActor(FFXIV_ACT_Plugin.Common.Models.Combatant actor, MarkType markingType, bool shouldLog, bool localOnly = false)
         {
-            var combatant = FFXIV_ACT_Plugin.DataRepository.GetCombatantList().FirstOrDefault(i => i.ID == ActorID);
-            if (ActorID is not (0xE0000000 or 0xE000000) && combatant == null)
+            if (shouldLog)
             {
-                throw new Exception(GetLocalizedString("ActorNotFound", ActorID));
+                PluginUI.Log($"Mark: Actor={actor.Name} (0x{actor.ID:X8}), Type={markingType} ({(int)markingType}), LocalOnly={localOnly}");
             }
-            PluginUI.Log($"ActorID={ActorID:X}, markingType={(int)markingType}, LocalOnly={localOnly}");
             var assemblyLock = Memory.Executor.AssemblyLock;
             var flag = false;
             try
             {
                 Monitor.Enter(assemblyLock, ref flag);
                 _ = !localOnly
-                    ? Memory.CallInjected64<char>(MarkingFunc, MarkingController, markingType, ActorID) 
-                    : Memory.CallInjected64<char>(LocalMarkingFunc, MarkingController, markingType - 1, ActorID, 0); //本地标点的markingType从0开始，因此需要-1
+                    ? Memory.CallInjected64<char>(MarkingFunc, MarkingController, markingType, actor.ID) 
+                    : Memory.CallInjected64<char>(LocalMarkingFunc, MarkingController, markingType - 1, actor.ID, 0); //本地标点的markingType从0开始，因此需要-1
             }
             finally {
                 if (flag) Monitor.Exit(assemblyLock);
             }
         }
+
         protected override Dictionary<string, Dictionary<Language, string>> LocalizedStrings { get; } = new()
         {
             ["ActorNotFound"] = new()

@@ -12,6 +12,8 @@ namespace PostNamazu.Models
         public MarkType? MarkType { get; set; }
         [JsonProperty]
         public bool LocalOnly { get; set; } = false;
+        [JsonProperty]
+        public bool Log { get; set; } = true;
     }
 
     public enum MarkType : byte

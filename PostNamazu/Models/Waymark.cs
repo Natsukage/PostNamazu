@@ -34,6 +34,10 @@ namespace PostNamazu.Models
 
 		public override int GetHashCode() => X.GetHashCode() & Y.GetHashCode() & Z.GetHashCode() & ID.GetHashCode() & Active.GetHashCode();
 
+        public override string ToString() => Active 
+			? $"{ID}: ({X:G3}, {Z:G3}), {Y:G3}" 
+			: $"{ID}: inactive";
+
 		/// <summary>
 		/// PropertyChanged event handler for this model.
 		/// </summary>

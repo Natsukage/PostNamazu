@@ -157,9 +157,9 @@ namespace PostNamazu
                     foreach (XmlNode action in actionList)
                         ActionEnabled[action.Name] = bool.Parse(action.InnerText);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    Log(I18n.Translate("PostNamazuUi/CfgLoadException", "配置文件载入异常：\n{0}"));
+                    Log(I18n.Translate("PostNamazuUi/CfgLoadException", "配置文件载入异常：\n{0}", ex.ToString()));
                     File.Delete(SettingsFile);
                     Log(I18n.Translate("PostNamazuUi/CfgReset", "已重置配置文件。"));
                 }

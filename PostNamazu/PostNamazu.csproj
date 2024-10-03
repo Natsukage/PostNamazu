@@ -8,7 +8,7 @@
     <PlatformTarget>x64</PlatformTarget>
     <Nullable>disable</Nullable>
     <AssemblyVersion></AssemblyVersion>
-    <Version>1.3.4.1</Version>
+    <Version>1.3.4.2</Version>
   </PropertyGroup>
 
   <ItemGroup>

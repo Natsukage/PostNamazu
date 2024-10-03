@@ -47,7 +47,7 @@ namespace PostNamazu.Common
             ["PostNamazu/TrigNotFound"] = "Triggernometry not found.",
             ["PostNamazu/XivProcInject"] = "Found FFXIV process {0}.",
             ["PostNamazu/XivProcInjectException"] = "Error when injecting into FFXIV process! \n{0}",
-            ["PostNamazu/XivProcInjectFail"] = "Unable to inject into the current FFXIV process (might have been injected by another process?)",
+            ["PostNamazu/XivProcInjectFail"] = "Unable to inject into the current FFXIV process, it may have already been injected by another process. Please try restarting the game.",
             ["PostNamazu/XivProcSwitch"] = "Switched to FFXIV process {0}.",
             ["PostNamazuUi/CfgLoadException"] = "Exception occurred when loading configuration file: \n{0}",
             ["PostNamazuUi/CfgReset"] = "Configuration has been reset.",

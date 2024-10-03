@@ -231,7 +231,7 @@ namespace PostNamazu
                 return true;
             }
             catch (ArgumentOutOfRangeException) {
-                //PluginUI.Log(I18n.Translate("PostNamazu/XivProcInjectFail", "无法对当前进程注入，可能是已经被其他进程注入了？"));
+                //PluginUI.Log(I18n.Translate("PostNamazu/XivProcInjectFail", "无法注入当前进程，可能是已经被其他进程注入了，请尝试重启游戏。"));
             }
 
             try {
@@ -239,7 +239,7 @@ namespace PostNamazu
                 return true;
             }
             catch (ArgumentOutOfRangeException) {
-                PluginUI.Log(I18n.Translate("PostNamazu/XivProcInjectFail", "无法对当前进程注入，可能是已经被其他进程注入了？"));
+                PluginUI.Log(I18n.Translate("PostNamazu/XivProcInjectFail", "无法注入当前进程，可能是已经被其他进程注入了，请尝试重启游戏。"));
             }
             return false;
         }

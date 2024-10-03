@@ -10,14 +10,11 @@ namespace PostNamazu.Actions
     {
         private IntPtr ProcessChatBoxPtr;
         private IntPtr GetUiModulePtr;
-        private IntPtr TargetAddress;
 
         public override void GetOffsets()
         {
             base.GetOffsets();
             ProcessChatBoxPtr = SigScanner.ScanText("48 89 5C 24 ?? 57 48 83 EC 20 48 8B FA 48 8B D9 45 84 C9");
-            var sigAddress = SigScanner.ScanText("49 8B C4 48 8B 0D");
-            TargetAddress = sigAddress + 24 + Memory.Read<int>(sigAddress + 20);
             GetUiModulePtr = SigScanner.ScanText("E8 ?? ?? ?? ?? 80 7B 1D 01");
         }
 
@@ -49,7 +46,7 @@ namespace PostNamazu.Actions
                 allocatedMemory.Write("t1", 0x40);
                 allocatedMemory.Write("tLength", array.Length + 1);
                 allocatedMemory.Write("t3", 0x00);
-                var uiModulePtr = Memory.CallInjected64<IntPtr>(GetUiModulePtr, Memory.Read<IntPtr>(TargetAddress));
+                var uiModulePtr = Memory.CallInjected64<IntPtr>(GetUiModulePtr, PostNamazu.FrameworkPtr);
                 _ = Memory.CallInjected64<int>(ProcessChatBoxPtr, uiModulePtr,allocatedMemory.Address, IntPtr.Zero, (byte)0);
             }
             finally {

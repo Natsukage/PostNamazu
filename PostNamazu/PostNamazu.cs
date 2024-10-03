@@ -179,7 +179,11 @@ namespace PostNamazu
                     );
                 Detach();
             }
-            foreach (var m in Modules) {
+            _frameworkPtrPtr = IntPtr.Zero;
+            _isCN = null;
+            GetRegion();
+            foreach (var m in Modules)
+            {
                 m.Setup();
             }
         }
@@ -244,6 +248,113 @@ namespace PostNamazu
             return false;
         }
 
+        internal static bool _playerDetected = false;
+        internal static bool? _isCN = null;
+        public bool IsCN
+        {
+            get
+            {
+                GetRegion();
+                return _isCN.Value;
+            }
+        }
+
+        private void GetRegion()
+        {
+            /*
+            // Always try to detect the region by player name if it has not been done yet
+            if (!_playerDetected)
+            {
+                GetRegionByPlayer();
+            } */
+
+            // If the region has not been detected by player name,
+            // try to estimate it by memory (only run once when attached to each FFXIV process)
+            if (_frameworkPtrPtr == IntPtr.Zero)
+            {
+                GetRegionByMemory();
+            }
+        }
+
+        /* for future use if possible
+        private void GetRegionByPlayer()
+        {
+            var myId = FFXIV_ACT_Plugin.DataRepository.GetCurrentPlayerID();
+            var myName = FFXIV_ACT_Plugin.DataRepository.GetCombatantList().FirstOrDefault(c => c.ID == myId)?.Name;
+            bool? result = !myName?.Contains(" ");
+            if (result.HasValue)
+            {
+                _playerDetected = true;
+                PluginUI.Log(_isCN.Value
+                    ? I18n.Translate("PostNamazu/XivDetectRegionCN", "已设置为国服配置（根据角色名称判断）。")
+                    : I18n.Translate("PostNamazu/XivDetectRegionGlobal", "已设置为国际服配置（根据角色名称判断）。")
+                );
+            }
+            _isCN = result ?? _isCN;
+        } */
+
+        private void GetRegionByMemory()
+        {
+            if (FrameworkPtrPtr != IntPtr.Zero) // scanning FrameworkPtrPtr
+            {
+                byte language = Memory.Read<byte>(FrameworkPtr + 0x580);
+                bool? result = language switch
+                {
+                    0 or 1 or 2 or 3 => false,
+                    4 => true,
+                    _ => null,
+                };
+                if (result.HasValue)
+                {
+                    _isCN = result;
+                    PluginUI.Log(_isCN.Value
+                        ? I18n.Translate("PostNamazu/XivDetectMemRegionCN", "已设置为国服配置（根据内存信息判断）。")
+                        : I18n.Translate("PostNamazu/XivDetectMemRegionGlobal", "已设置为国际服配置（根据内存信息判断）。")
+                    );
+                }
+                else _isCN = false; // default
+            }
+        }
+
+        private IntPtr _frameworkPtrPtr = IntPtr.Zero;
+        public IntPtr FrameworkPtrPtr
+        {             
+            get
+            {
+                if (_frameworkPtrPtr != IntPtr.Zero)
+                { 
+                    return _frameworkPtrPtr;
+                }
+                try
+                {   // 7.0 CN
+                    var sigStart = SigScanner.ScanText("49 8B C4 48 8B 0D");
+                    _frameworkPtrPtr = sigStart + 24 + Memory.Read<int>(sigStart + 20);
+                    return _frameworkPtrPtr;
+                } 
+                catch { }
+                try
+                {   // 7.0 global
+                    var sigStart = SigScanner.ScanText("49 8B DC 48 89 1D");
+                    _frameworkPtrPtr = sigStart + 10 + Memory.Read<int>(sigStart + 6);
+                    return _frameworkPtrPtr;
+                } 
+                catch 
+                {
+                    PluginUI.Log(I18n.Translate("PostNamazu/XivFrameworkNotFound", "未找到 Framework 的内存签名，部分功能无法使用，可能需要更新插件版本。"));
+                    return IntPtr.Zero; 
+                }
+            }
+        }
+        public IntPtr FrameworkPtr => Memory.Read<IntPtr>(FrameworkPtrPtr);
+
+        private void LogRegion()
+        {
+            if (!_isCN.HasValue) return;
+            PluginUI.Log(_isCN.Value
+                ? I18n.Translate("PostNamazu/XivDetectRegionCN", "已设置为国服。")
+                : I18n.Translate("PostNamazu/XivDetectRegionGlobal", "已设置为国际服。")
+            );
+        }
 
         /// <summary>
         ///     代替ProcessChanged委托，手动循环检测当前活动进程并进行注入。

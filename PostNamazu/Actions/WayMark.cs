@@ -46,7 +46,7 @@ namespace PostNamazu.Actions
         {
             CheckBeforeExecution(waymarksStr);
 
-            switch (waymarksStr.ToLower()) {
+            switch (waymarksStr.ToLower().Trim()) {
                 case "save":
                 case "backup":
                     SaveWaymark();
@@ -61,10 +61,15 @@ namespace PostNamazu.Actions
                     break;
                 case "clear":
                     DoWaymarks(new WayMarks { A = new Waymark(), B = new Waymark(), C = new Waymark(), D = new Waymark(), One = new Waymark(), Two = new Waymark(), Three = new Waymark(), Four = new Waymark() });
+                    PluginUI.Log("Waymarks: clear");
                     break;
                 default:
                     var waymarks = JsonConvert.DeserializeObject<WayMarks>(waymarksStr);
-                    PluginUI.Log(waymarksStr);
+                    if (waymarks.Log)
+                    {
+                        WayMarks.SetWaymarkIds(waymarks);
+                        PluginUI.Log("Waymarks: " + waymarks.ToString());
+                    }
                     DoWaymarks(waymarks);
                     break;
             }
@@ -155,23 +160,23 @@ namespace PostNamazu.Actions
         {
             ["Load"] = new()
             {
-                [Language.EN] = "Waymark cache restored",
-                [Language.CN] = "已恢复暂存的标点"
+                [Language.EN] = "Waymarks: cache restored",
+                [Language.CN] = "Waymarks: 已恢复暂存的标点"
             },
             ["Reset"] = new()
             {
-                [Language.EN] = "Waymark cache cleared",
-                [Language.CN] = "已清除暂存的标点"
+                [Language.EN] = "Waymarks: cache cleared",
+                [Language.CN] = "Waymarks: 已清除暂存的标点"
             },
             ["Save"] = new()
             {
-                [Language.EN] = "Current waymark saved to cache",
-                [Language.CN] = "已暂存当前标点。"
+                [Language.EN] = "Waymarks: current waymarks saved to cache",
+                [Language.CN] = "Waymarks: 已暂存当前标点。"
             },
             ["SaveException"] = new()
             {
-                [Language.EN] = "Exception occurred when saving waymarks: \n{0}",
-                [Language.CN] = "保存标记错误：\n{0}"
+                [Language.EN] = "Waymarks: Exception occurred when saving waymarks: \n{0}",
+                [Language.CN] = "Waymarks: 保存标记错误：\n{0}"
             },
         };
     }

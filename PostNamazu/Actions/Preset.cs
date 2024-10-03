@@ -107,7 +107,11 @@ namespace PostNamazu.Actions
             switch (waymarksStr.ToLower()) {
                 default:
                     var waymarks = JsonConvert.DeserializeObject<WayMarks>(waymarksStr);
-                    PluginUI.Log(waymarksStr);
+                    if (waymarks.Log)
+                    {
+                        WayMarks.SetWaymarkIds(waymarks);
+                        PluginUI.Log("Preset: " + waymarks.ToString());
+                    }
                     DoInsertPreset(waymarks);
                     break;
             }

@@ -38,11 +38,15 @@ namespace PostNamazu.Models
 			? $"{ID}: ({X:G3}, {Z:G3}), {Y:G3}" 
 			: $"{ID}: inactive";
 
-		/// <summary>
-		/// PropertyChanged event handler for this model.
-		/// </summary>
+        public string ToJsonString() => Active
+            ? $"\"X\": {X:G3}, \"Z\": {Z:G3}, \"Y\": {Y:G3}, \"Active\": true"
+            : $"";
+
+        /// <summary>
+        /// PropertyChanged event handler for this model.
+        /// </summary>
 #pragma warning disable 67
-		public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler PropertyChanged;
 #pragma warning restore 67
 	}
 

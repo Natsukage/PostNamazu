@@ -16,7 +16,9 @@ namespace PostNamazu.Actions
         protected PostNamazuUi PluginUI => PostNamazu?.PluginUI;
         protected SigScanner SigScanner => PostNamazu?.SigScanner;
 
-        internal bool isReady = false;
+        internal static bool isReady = false;
+
+        internal static bool complaintAboutNotReady = false;
 
         public void Init(PostNamazu postNamazu) => PostNamazu = postNamazu;
 
@@ -43,11 +45,27 @@ namespace PostNamazu.Actions
             PluginUI?.Log(msg);
         }
 
-        public void CheckBeforeExecution(string command)
+        public void CheckBeforeExecution()
         {
             if (!isReady)
-                throw new Exception(I18n.Translate("NamazuModule/XivProcNotFound", "没有对应的 FFXIV 进程"));
+            {
+                string noXivMsg = I18n.Translate("NamazuModule/XivProcNotFound", "没有对应的 FFXIV 进程");
+                if (complaintAboutNotReady)
+                {
+                    throw new IgnoredException(noXivMsg);
+                }
+                else
+                {
+                    complaintAboutNotReady = true;
+                    throw new Exception(noXivMsg);
+                }
+            }
+            else complaintAboutNotReady = false;
+        }
 
+        public void CheckBeforeExecution(string command)
+        {
+            CheckBeforeExecution();
             if (string.IsNullOrWhiteSpace(command))
                 throw new Exception(I18n.Translate("NamazuModule/EmptyCommand", "指令为空"));
         }
@@ -59,6 +77,10 @@ namespace PostNamazu.Actions
             if (LocalizedStrings.TryGetValue(key, out var translations) && translations.TryGetValue(CurrentLanguage, out var localizedString))
                 return string.Format(localizedString, args);
             return key;
+        }
+
+        internal class IgnoredException : Exception {
+            internal IgnoredException(string msg) : base(msg) { }
         }
     }
 

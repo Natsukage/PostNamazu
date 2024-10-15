@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -21,6 +21,7 @@ namespace PostNamazu
             //AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
         }
 
+        public static PostNamazu Plugin;
         internal PostNamazuUi PluginUI;
         private Label _lblStatus; // The status label that appears in ACT's Plugin tab
 
@@ -44,6 +45,7 @@ namespace PostNamazu
         #region Init
         public void InitPlugin(TabPage pluginScreenSpace, Label pluginStatusText)
         {
+            Plugin = this;
             _lblStatus = pluginStatusText;
 
             PluginUI = new PostNamazuUi();
@@ -83,6 +85,7 @@ namespace PostNamazu
             _processSwitcher.CancelAsync();
             
             _lblStatus.Text = I18n.Translate("PostNamazu/PluginDeInit", "鲶鱼精邮差已退出。");
+            Plugin = null;
         }
 
 
@@ -115,6 +118,11 @@ namespace PostNamazu
                     
                 }
             }
+        }
+
+        public T GetModuleInstance<T>() where T : NamazuModule
+        {
+            return (T)Modules.FirstOrDefault(m => m is T);
         }
 
         private void ServerStart(object sender = null, EventArgs e = null)
@@ -208,7 +216,7 @@ namespace PostNamazu
         /// <returns></returns>
         private FFXIV_ACT_Plugin.FFXIV_ACT_Plugin GetFFXIVPlugin()
         {
-            var plugin = ActGlobals.oFormActMain.ActPlugins.FirstOrDefault(x => x.pluginObj?.GetType().ToString() == "FFXIV_ACT_Plugin.FFXIV_ACT_Plugin")?.pluginObj;
+            var plugin = ActGlobals.oFormActMain.ActPlugins.FirstOrDefault(x => x.pluginObj?.GetType()?.ToString() == "FFXIV_ACT_Plugin.FFXIV_ACT_Plugin")?.pluginObj;
             return (FFXIV_ACT_Plugin.FFXIV_ACT_Plugin)plugin 
                 ?? throw new Exception(I18n.Translate("PostNamazu/ParserNotFound", "找不到 FFXIV 解析插件，请确保其加载顺序位于鲶鱼精邮差之前。"));
         }
@@ -390,7 +398,7 @@ namespace PostNamazu
                     PluginUI.Log(I18n.Translate("PostNamazu/TrigNotFound", "没有找到 Triggernometry。"));
                     return;
                 }
-                _triggerHoster = new TriggerHoster.Program(plugin) { PostNamazuDelegate = DoAction };
+                _triggerHoster = new TriggerHoster.Program(plugin) { PostNamazuDelegate = DoAction, LogDelegate = PluginUI.Log };
                 _triggerHoster.Init(CmdBind.Keys.ToArray());
                 PluginUI.Log(I18n.Translate("PostNamazu/Trig", "已绑定 Triggernometry。"));
             }
@@ -478,7 +486,9 @@ namespace PostNamazu
                 else
                     PluginUI.Log(I18n.Translate("PostNamazu/ActionIgnored", "忽略动作：{0}: {1}", command, payload));
             }
-            catch (Exception ex) {
+            catch (NamazuModule.IgnoredException) { }
+            catch (Exception ex)
+            {
                 PluginUI.Log(ex.ToString());
             }
         }

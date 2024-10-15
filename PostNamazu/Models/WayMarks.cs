@@ -1,9 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using Newtonsoft.Json;
+using System.Collections;
+using System.Collections.Generic;
 using System.Text;
 
 namespace PostNamazu.Models
 {
-    class WayMarks
+    [JsonObject]
+    public class WayMarks : IEnumerable<Waymark>
     {
         public string Name { get; set; }
         public ushort MapID { get; set; }
@@ -16,7 +19,9 @@ namespace PostNamazu.Models
         public Waymark Three { get; set; }
         public Waymark Four { get; set; }
         public bool Log { get; set; } = true;
+        public bool LocalOnly { get; set; } = true;
 
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         public IEnumerator<Waymark> GetEnumerator()
         {
             yield return A;
@@ -33,8 +38,8 @@ namespace PostNamazu.Models
         {
             StringBuilder sb = new StringBuilder();
 
-            if (Name != null)   sb.Append($"Name={Name}; \n");
-            if (MapID != 0)     sb.Append($"MapId={MapID}; \n");
+            if (Name != null) sb.Append($"Name={Name}; \n");
+            if (MapID != 0) sb.Append($"MapId={MapID}; \n");
 
             foreach (var waymark in this)
             {
@@ -50,6 +55,17 @@ namespace PostNamazu.Models
             }
             return sb.ToString();
         }
+
+        public string ToJsonString() => @$"{{
+    ""A"": {{{A?.ToJsonString() ?? ""}}},
+    ""B"": {{{B?.ToJsonString() ?? ""}}},
+    ""C"": {{{C?.ToJsonString() ?? ""}}},
+    ""D"": {{{D?.ToJsonString() ?? ""}}},
+    ""One"":   {{{One  ?.ToJsonString() ?? ""}}},
+    ""Two"":   {{{Two  ?.ToJsonString() ?? ""}}},
+    ""Three"": {{{Three?.ToJsonString() ?? ""}}},
+    ""Four"":  {{{Four ?.ToJsonString() ?? ""}}},
+}}";
 
         internal static void SetWaymarkIds(WayMarks wayMarks)
         {

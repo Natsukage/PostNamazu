@@ -390,7 +390,7 @@ namespace PostNamazu
                     PluginUI.Log(I18n.Translate("PostNamazu/TrigNotFound", "没有找到 Triggernometry。"));
                     return;
                 }
-                _triggerHoster = new TriggerHoster.Program(plugin) { PostNamazuDelegate = DoAction };
+                _triggerHoster = new TriggerHoster.Program(plugin) { PostNamazuDelegate = DoAction, LogDelegate = PluginUI.Log };
                 _triggerHoster.Init(CmdBind.Keys.ToArray());
                 PluginUI.Log(I18n.Translate("PostNamazu/Trig", "已绑定 Triggernometry。"));
             }

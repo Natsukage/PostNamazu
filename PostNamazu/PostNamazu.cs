@@ -478,7 +478,9 @@ namespace PostNamazu
                 else
                     PluginUI.Log(I18n.Translate("PostNamazu/ActionIgnored", "忽略动作：{0}: {1}", command, payload));
             }
-            catch (Exception ex) {
+            catch (NamazuModule.IgnoredException) { }
+            catch (Exception ex)
+            {
                 PluginUI.Log(ex.ToString());
             }
         }

@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -7,7 +7,9 @@ using System.Text;
 using System.Windows.Forms;
 using System.Xml;
 using Advanced_Combat_Tracker;
+using PostNamazu.Actions;
 using PostNamazu.Common;
+using PostNamazu.Models;
 
 namespace PostNamazu
 {
@@ -221,6 +223,35 @@ namespace PostNamazu
             {
                 RecursiveTranslateControls(child);
             }
+        }
+
+        public void btnWaymarksImport_Click(object sender, EventArgs e)
+        {
+            ImportWaymarksForm importForm = new ImportWaymarksForm();
+            importForm.Show(this);
+            importForm.BringToFront();
+        }
+
+        public void btnWaymarksExport_Click(object sender, EventArgs e)
+        {
+            string data;
+            try
+            {
+                data = GetCurrentWarmarksString();
+                Clipboard.SetText(data);
+                MessageBox.Show(I18n.Translate("PostNamazuUi/ExportWaymarks", "已将标点文本存入剪贴板。"), "PostNamazu", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(I18n.Translate("PostNamazuUi/ExportWaymarksFail", "读取现有标点失败：\n{0}", ex.ToString()), "PostNamazu", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+        }
+
+        public static string GetCurrentWarmarksString()
+        {
+            WayMarks waymarks = PostNamazu.Plugin.GetModuleInstance<WayMark>().ReadCurrentWaymarks();
+            return waymarks.ToJsonString();
         }
 
     }

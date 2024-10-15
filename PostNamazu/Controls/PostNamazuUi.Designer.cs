@@ -1,4 +1,4 @@
-﻿namespace PostNamazu
+﻿﻿namespace PostNamazu
 {
     partial class PostNamazuUi
     {
@@ -50,6 +50,10 @@
             this.grpLang = new System.Windows.Forms.GroupBox();
             this.radioButtonEN = new System.Windows.Forms.RadioButton();
             this.radioButtonCN = new System.Windows.Forms.RadioButton();
+            this.grpWaymarks = new System.Windows.Forms.GroupBox();
+            this.tableWaymarks = new System.Windows.Forms.TableLayoutPanel();
+            this.btnWaymarksImport = new System.Windows.Forms.Button();
+            this.btnWaymarksExport = new System.Windows.Forms.Button();
             this.logTip = new System.Windows.Forms.ToolTip(this.components);
             ((System.ComponentModel.ISupportInitialize)(this.TextPort)).BeginInit();
             this.mainGroupBox.SuspendLayout();
@@ -58,6 +62,8 @@
             this.grpHttp.SuspendLayout();
             this.grpEnabledCmd.SuspendLayout();
             this.grpLang.SuspendLayout();
+            this.tableWaymarks.SuspendLayout();
+            this.grpWaymarks.SuspendLayout();
             this.flowLayoutActions.SuspendLayout();
             this.mainPanel.SuspendLayout();
             this.SuspendLayout();
@@ -100,6 +106,7 @@
             this.leftTable.Controls.Add(this.grpHttp, 0, 0);
             this.leftTable.Controls.Add(this.grpEnabledCmd, 0, 1);
             this.leftTable.Controls.Add(this.grpLang, 0, 2);
+            this.leftTable.Controls.Add(this.grpWaymarks, 0, 3);
             this.leftTable.Dock = System.Windows.Forms.DockStyle.Left;
             this.leftTable.Name = "leftTable";
             this.leftTable.RowCount = 4;
@@ -269,6 +276,55 @@
             this.radioButtonCN.UseVisualStyleBackColor = true;
             this.radioButtonCN.CheckedChanged += new System.EventHandler(this.LanguageRadioButton_CheckedChanged);
             // 
+            // grpWaymarks
+            // 
+            this.grpWaymarks.AutoSize = true;
+            this.grpWaymarks.Controls.Add(tableWaymarks);
+            this.grpWaymarks.Dock = System.Windows.Forms.DockStyle.Top;
+            this.grpWaymarks.Margin = new System.Windows.Forms.Padding(5);
+            this.grpWaymarks.Name = "grpWaymarks";
+            this.grpWaymarks.Padding = new System.Windows.Forms.Padding(10, 5, 10, 5);
+            this.grpWaymarks.Text = "场地标点";
+            // 
+            // tableWaymarks
+            // 
+            this.tableWaymarks.AutoSize = true;
+            this.tableWaymarks.ColumnCount = 2;
+            this.tableWaymarks.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tableWaymarks.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tableWaymarks.Controls.Add(this.btnWaymarksImport, 0, 0);
+            this.tableWaymarks.Controls.Add(this.btnWaymarksExport, 1, 0);
+            this.tableWaymarks.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tableWaymarks.Name = "tableWaymarks";
+            this.tableWaymarks.RowCount = 1;
+            this.tableWaymarks.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            // 
+            // btnWaymarksImport
+            // 
+            this.btnWaymarksImport.AutoSize = true;
+            this.btnWaymarksImport.Anchor = System.Windows.Forms.AnchorStyles.None;
+            this.btnWaymarksImport.Location = new System.Drawing.Point(5, 323);
+            this.btnWaymarksImport.Margin = new System.Windows.Forms.Padding(2);
+            this.btnWaymarksImport.Name = "btnWaymarksImport";
+            this.btnWaymarksImport.Size = new System.Drawing.Size(116, 22);
+            this.btnWaymarksImport.TabStop = false;
+            this.btnWaymarksImport.Text = "导入";
+            this.btnWaymarksImport.UseVisualStyleBackColor = true;
+            this.btnWaymarksImport.Click += new System.EventHandler(this.btnWaymarksImport_Click);
+            // 
+            // btnWaymarksExport
+            // 
+            this.btnWaymarksExport.AutoSize = true;
+            this.btnWaymarksExport.Anchor = System.Windows.Forms.AnchorStyles.None;
+            this.btnWaymarksExport.Location = new System.Drawing.Point(5, 323);
+            this.btnWaymarksExport.Margin = new System.Windows.Forms.Padding(2);
+            this.btnWaymarksExport.Name = "btnWaymarksExport";
+            this.btnWaymarksExport.Size = new System.Drawing.Size(116, 22);
+            this.btnWaymarksExport.TabStop = false;
+            this.btnWaymarksExport.Text = "导出";
+            this.btnWaymarksExport.UseVisualStyleBackColor = true;
+            this.btnWaymarksExport.Click += new System.EventHandler(this.btnWaymarksExport_Click);
+            // 
             // lstMessages
             // 
             this.mainTable.SetColumnSpan(this.lstMessages, 3);
@@ -349,6 +405,10 @@
             this.mainTable.PerformLayout();
             this.tableHttp.ResumeLayout(false);
             this.tableHttp.PerformLayout();
+            this.tableWaymarks.ResumeLayout(false);
+            this.tableWaymarks.PerformLayout();
+            this.grpWaymarks.ResumeLayout(false);
+            this.grpWaymarks.PerformLayout();
             this.grpHttp.ResumeLayout(false);
             this.grpHttp.PerformLayout();
             this.grpEnabledCmd.ResumeLayout(false);
@@ -374,6 +434,10 @@
         public System.Windows.Forms.GroupBox grpHttp;
         public System.Windows.Forms.GroupBox grpEnabledCmd;
         public System.Windows.Forms.GroupBox grpLang;
+        public System.Windows.Forms.GroupBox grpWaymarks;
+        private System.Windows.Forms.TableLayoutPanel tableWaymarks;
+        public System.Windows.Forms.Button btnWaymarksImport;
+        public System.Windows.Forms.Button btnWaymarksExport;
         private System.Windows.Forms.ToolTip logTip;
         private System.Windows.Forms.FlowLayoutPanel flowLayoutActions;
         private System.Windows.Forms.Panel mainPanel;

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿﻿using System.Collections.Generic;
 using System.Globalization;
 
 namespace PostNamazu.Common
@@ -12,22 +12,33 @@ namespace PostNamazu.Common
 
         private static readonly Dictionary<string, Dictionary<Language, string>> UiTranslations = new()
         {
-            ["ButtonClearMessage"]      = new() { [Language.EN] = "Clear Logs",             [Language.CN] = "清空全部日志" },
-            ["ButtonCopyProblematic"]   = new() { [Language.EN] = "Copy All Logs",          [Language.CN] = "复制全部日志" },
-            ["ButtonCopySelection"]     = new() { [Language.EN] = "Copy Selection",         [Language.CN] = "复制所选日志" },
-            ["ButtonStart"]             = new() { [Language.EN] = "Start",                  [Language.CN] = "开始" },
-            ["ButtonStop"]              = new() { [Language.EN] = "Stop",                   [Language.CN] = "停止" },
-            ["CheckAutoStart"]          = new() { [Language.EN] = "Auto-start Listening",   [Language.CN] = "自动启动监听" },
-            ["mainGroupBox"]            = new() { [Language.EN] = "PostNamazu",             [Language.CN] = "鲶鱼精邮差" },
-            ["lblEnabledCmd"]           = new() { [Language.EN] = "Enabled Commands:",      [Language.CN] = "启用以下动作" },
-            ["lbPort"]                  = new() { [Language.EN] = "Port",                   [Language.CN] = "端口" },
-            ["grpEnabledCmd"]           = new() { [Language.EN] = "Enabled Commands",       [Language.CN] = "启用以下动作" },
-            ["grpHttp"]                 = new() { [Language.EN] = "HTTP",                   [Language.CN] = "HTTP" },
-            ["grpLang"]                 = new() { [Language.EN] = "Language",               [Language.CN] = "语言" },
+            ["btnWaymarksExport"]               = new() { [Language.EN] = "Export",                     [Language.CN] = "导出" },
+            ["btnWaymarksImport"]               = new() { [Language.EN] = "Import",                     [Language.CN] = "导入" },
+            ["ButtonClearMessage"]              = new() { [Language.EN] = "Clear Logs",                 [Language.CN] = "清空全部日志" },
+            ["ButtonCopyProblematic"]           = new() { [Language.EN] = "Copy All Logs",              [Language.CN] = "复制全部日志" },
+            ["ButtonCopySelection"]             = new() { [Language.EN] = "Copy Selection",             [Language.CN] = "复制所选日志" },
+            ["ButtonStart"]                     = new() { [Language.EN] = "Start",                      [Language.CN] = "开始" },
+            ["ButtonStop"]                      = new() { [Language.EN] = "Stop",                       [Language.CN] = "停止" },
+            ["CheckAutoStart"]                  = new() { [Language.EN] = "Auto-start Listening",       [Language.CN] = "自动启动监听" },
+            ["mainGroupBox"]                    = new() { [Language.EN] = "PostNamazu",                 [Language.CN] = "鲶鱼精邮差" },
+            ["lblEnabledCmd"]                   = new() { [Language.EN] = "Enabled Commands:",          [Language.CN] = "启用以下动作" },
+            ["lbPort"]                          = new() { [Language.EN] = "Port",                       [Language.CN] = "端口" },
+            ["grpEnabledCmd"]                   = new() { [Language.EN] = "Enabled Commands",           [Language.CN] = "启用以下动作" },
+            ["grpHttp"]                         = new() { [Language.EN] = "HTTP",                       [Language.CN] = "HTTP" },
+            ["grpLang"]                         = new() { [Language.EN] = "Language",                   [Language.CN] = "语言" },
+            ["grpWaymarks"]                     = new() { [Language.EN] = "Waymarks",                   [Language.CN] = "场地标点" },
+            ["ImportWaymarksForm"]              = new() { [Language.EN] = "Import waymarks",            [Language.CN] = "导入场地标点" },
+            ["ImportWaymarksForm/btnPlace"]     = new() { [Language.EN] = "Import as local waymarks",   [Language.CN] = "导入为本地标点" },
+            ["ImportWaymarksForm/btnPublic"]    = new() { [Language.EN] = "Import as public waymarks",  [Language.CN] = "导入为公开标点" },
+            ["ImportWaymarksForm/grpMain"]      = new() { [Language.EN] = "Input waymarks JSON string", [Language.CN] = "输入标点 JSON 字符串" },
         };
 
         private static readonly Dictionary<string, string> TranslationsEN = new()
         {
+            ["ImportWaymarksForm/Fail"] = "Failed to apply waymarks:\n{0}",
+            ["ImportWaymarksForm/InCombat"] = "Currently in combat, unable to place public waymarks.",
+            ["ImportWaymarksForm/Local"] = "Waymarks applied locally.",
+            ["ImportWaymarksForm/Public"] = "Waymarks have been made public.",
             ["NamazuModule/EmptyCommand"] = "Empty command.",
             ["NamazuModule/XivProcNotFound"] = "FFXIV process not found.",
             ["PostNamazu"] = "PostNamazu",
@@ -56,6 +67,8 @@ namespace PostNamazu.Common
             ["PostNamazu/XivProcSwitch"] = "Switched to FFXIV process {0}.",
             ["PostNamazuUi/CfgLoadException"] = "Exception occurred when loading configuration file: \n{0}",
             ["PostNamazuUi/CfgReset"] = "Configuration has been reset.",
+            ["PostNamazuUi/ExportWaymarks"] = "Waymarker text has been copied to the clipboard.",
+            ["PostNamazuUi/ExportWaymarksFail"] = "Failed to read existing waymarkers:\n{0}",
         };
 
         public static string Translate(string key, string CN, params object[] args)

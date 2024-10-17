@@ -28,6 +28,7 @@ namespace PostNamazu
         private GroupBox grpMain;
         private TableLayoutPanel mainTable;
         public TextBox TxtWaymarksData;
+        public Button btnDefault;
         public Button btnPlace;
         public Button btnPublic;
 
@@ -55,6 +56,8 @@ namespace PostNamazu
             }
             TxtWaymarksData.Select(TxtWaymarksData.TextLength, 0);
 
+            btnDefault = MyButton(nameof(btnDefault));
+            btnDefault.Click += new EventHandler(btnDefault_Click);
             btnPlace = MyButton(nameof(btnPlace));
             btnPlace.Click += new EventHandler(btnPlace_Click);
             btnPublic = MyButton(nameof(btnPublic));
@@ -67,13 +70,15 @@ namespace PostNamazu
             mainTable.RowCount = 2;
             mainTable.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             mainTable.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            mainTable.ColumnCount = 2;
-            mainTable.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-            mainTable.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+            mainTable.ColumnCount = 3;
+            mainTable.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33));
+            mainTable.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33));
+            mainTable.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33));
             mainTable.Controls.Add(TxtWaymarksData, 0, 0);
-            mainTable.SetColumnSpan(TxtWaymarksData, 2);
-            mainTable.Controls.Add(btnPlace, 0, 1);
-            mainTable.Controls.Add(btnPublic, 1, 1);
+            mainTable.SetColumnSpan(TxtWaymarksData, 3);
+            mainTable.Controls.Add(btnDefault, 0, 1);
+            mainTable.Controls.Add(btnPlace, 1, 1);
+            mainTable.Controls.Add(btnPublic, 2, 1);
 
             this.FormClosed += (_, __) =>
             {
@@ -100,6 +105,11 @@ namespace PostNamazu
             };
             btn.Text = I18n.TranslateUi($"ImportWaymarksForm/{btn.Name}");
             return btn;
+        }
+
+        private void btnDefault_Click(object sender, EventArgs e)
+        {
+            TxtWaymarksData.Text = _defaultData;
         }
 
         private void btnPlace_Click(object sender, EventArgs e)

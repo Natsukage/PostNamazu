@@ -28,6 +28,7 @@ namespace PostNamazu.Common
             ["grpLang"]                         = new() { [Language.EN] = "Language",                   [Language.CN] = "语言" },
             ["grpWaymarks"]                     = new() { [Language.EN] = "Waymarks",                   [Language.CN] = "场地标点" },
             ["ImportWaymarksForm"]              = new() { [Language.EN] = "Import waymarks",            [Language.CN] = "导入场地标点" },
+            ["ImportWaymarksForm/btnDefault"]   = new() { [Language.EN] = "Fill in default data",       [Language.CN] = "填入默认数据" },
             ["ImportWaymarksForm/btnPlace"]     = new() { [Language.EN] = "Import as local waymarks",   [Language.CN] = "导入为本地标点" },
             ["ImportWaymarksForm/btnPublic"]    = new() { [Language.EN] = "Import as public waymarks",  [Language.CN] = "导入为公开标点" },
             ["ImportWaymarksForm/grpMain"]      = new() { [Language.EN] = "Input waymarks JSON string", [Language.CN] = "输入标点 JSON 字符串" },

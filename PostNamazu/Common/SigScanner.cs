@@ -376,19 +376,49 @@ namespace PostNamazu.Common
         }
 
 
-        public T ScanText<T>(string pattern, Func<IntPtr, T> visitor) {
+        public T ScanText<T>(string pattern, Func<IntPtr, T> visitor, string name = null)
+        {
             var results = FindPattern(pattern);
             if (results.Count > 1)
-                throw new ArgumentException($"Provided pattern found {results.Count}, only a single result is acceptable");
-
+            {
+                throw new ArgumentException(I18n.Translate(
+                    "SigScanner/ResultMultiple",
+                    "扫描{0}时匹配到 {1} 处内存签名，无法确定唯一位置。",
+                    name == null ? "" : $" {name} ",
+                    results.Count
+                ));
+            }
+            if (results.Count == 0)
+            {
+                throw new ArgumentException(I18n.Translate(
+                    "SigScanner/ResultNone",
+                    "扫描{0}时未匹配到所需的内存签名。",
+                    name == null ? "" : $" {name} "
+                ));
+            }
             return visitor(results[0]);
         }
 
-        public IntPtr ScanText(string pattern) {
+        public IntPtr ScanText(string pattern, string name = null)
+        {
             var results = FindPattern(pattern);
             if (results.Count > 1)
-                throw new ArgumentException($"Provided pattern found {results.Count}, only a single result is acceptable");
-
+            {
+                throw new ArgumentException(I18n.Translate(
+                    "SigScanner/ResultMultiple", 
+                    "扫描{0}时匹配到 {1} 处内存签名，无法确定唯一位置。", 
+                    name == null ? "" : $" {name} ",
+                    results.Count
+                ));
+            }
+            if (results.Count == 0)
+            {
+                throw new ArgumentException(I18n.Translate(
+                    "SigScanner/ResultNone", 
+                    "扫描{0}时未匹配到所需的内存签名。", 
+                    name == null ? "" : $" {name} "
+                ));
+            }
             var scanRet = results[0];
             var insnByte = ReadByte(scanRet);
             if (insnByte == 0xE8 || insnByte == 0xE9)
@@ -467,8 +497,8 @@ namespace PostNamazu.Common
         /// <param name="signature">The signature of the function using the data.</param>
         /// <param name="offset">The offset from function start of the instruction using the data.</param>
         /// <returns>An IntPtr to the static memory location.</returns>
-        public IntPtr GetStaticAddressFromSig(string signature, int offset = 0) {
-            IntPtr instrAddr = ScanText(signature);
+        public IntPtr GetStaticAddressFromSig(string signature, int offset = 0, string name = null) {
+            IntPtr instrAddr = ScanText(signature, name);
             instrAddr = IntPtr.Add(instrAddr, offset);
             long bAddr = (long)_baseAddress;
             long num;

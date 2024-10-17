@@ -40,10 +40,12 @@ namespace PostNamazu.Common
             ["ImportWaymarksForm/Local"] = "Waymarks applied locally.",
             ["ImportWaymarksForm/Public"] = "Waymarks have been made public.",
             ["NamazuModule/EmptyCommand"] = "Empty command.",
+            ["NamazuModule/GetOffsetsFail"] = "Failed to initialize the module {0}: \n{1}",
             ["NamazuModule/XivProcNotFound"] = "FFXIV process not found.",
             ["PostNamazu"] = "PostNamazu",
             ["PostNamazu/ActionIgnored"] = "Action Ignored: {0}: {1}",
             ["PostNamazu/ActionNotFound"] = "Unsupported operation: {0}",
+            ["PostNamazu/DoActionFail"] = "Exception when executing action {0}: \n{1}",
             ["PostNamazu/HttpException"] = "Unable to start listening on HTTP port {0}: \n{1}",
             ["PostNamazu/HttpStart"] = "Started HTTP listening on port {0}.",
             ["PostNamazu/HttpStop"] = "HTTP listening stopped.",
@@ -69,6 +71,9 @@ namespace PostNamazu.Common
             ["PostNamazuUi/CfgReset"] = "Configuration has been reset.",
             ["PostNamazuUi/ExportWaymarks"] = "Waymarker text has been copied to the clipboard.",
             ["PostNamazuUi/ExportWaymarksFail"] = "Failed to read existing waymarkers:\n{0}",
+            ["SigScanner/ResultMultiple"] = "Scanned{0} and found {1} memory signatures, unable to determine a unique location.",
+            ["SigScanner/ResultNone"] = "Scanned{0} and did not find the required memory signatures.",
+
         };
 
         public static string Translate(string key, string CN, params object[] args)

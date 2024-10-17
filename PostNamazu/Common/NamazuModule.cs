@@ -29,7 +29,7 @@ namespace PostNamazu.Actions
                 isReady = FFXIV_ACT_Plugin != null && FFXIV != null && Memory != null;
             }
             catch (Exception ex) {
-                Log(ex.ToString());
+                Log(I18n.Translate("NamazuModule/GetOffsetsFail", "初始化 {0} 模组失败：\n{1}", GetType().Name, ex.Message + " \n" + ex.StackTrace));
                 isReady = false;
             }
             //Log("初始化完成");

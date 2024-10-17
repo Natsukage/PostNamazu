@@ -1,16 +1,17 @@
-﻿﻿using System;
+﻿using Advanced_Combat_Tracker;
+using GreyMagic;
+using PostNamazu.Actions;
+using PostNamazu.Attributes;
+using PostNamazu.Common;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
-using PostNamazu.Actions;
-using PostNamazu.Attributes;
-using PostNamazu.Common;
-using Advanced_Combat_Tracker;
-using GreyMagic;
 
 namespace PostNamazu
 {
@@ -70,6 +71,8 @@ namespace PostNamazu
             InitializeActions();
             TriggIntegration();
             OverlayIntegration();
+
+            Assembly.Load("GreyMagic"); // 直接加载而非首次调用时延迟加载，防止没开启游戏而没调用 GreyMagic 初始化 Memory 时其他插件找不到 GreyMagic
 
             _lblStatus.Text = I18n.Translate("PostNamazu/PluginInit", "鲶鱼精邮差已启动。");
         }
@@ -242,7 +245,7 @@ namespace PostNamazu
                 _entrancePtr = SigScanner.ScanText("4C 8B DC 56 41 57 48 81 EC ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 84 24 ? ? ? ? 48 83 B9 ? ? ? ? ? 4C 8B FA"); //7.0
                 return true;
             }
-            catch (ArgumentOutOfRangeException) {
+            catch (ArgumentException) {
                 //PluginUI.Log(I18n.Translate("PostNamazu/XivProcInjectFail", "无法注入当前进程，可能是已经被其他进程注入了，请尝试重启游戏。"));
             }
 
@@ -250,7 +253,7 @@ namespace PostNamazu
                 _entrancePtr = SigScanner.ScanText("E9 ?? ?? ?? ?? 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 48 83 B9");
                 return true;
             }
-            catch (ArgumentOutOfRangeException) {
+            catch (ArgumentException) {
                 PluginUI.Log(I18n.Translate("PostNamazu/XivProcInjectFail", "无法注入当前进程，可能是已经被其他进程注入了，请尝试重启游戏。"));
             }
             return false;
@@ -489,7 +492,7 @@ namespace PostNamazu
             catch (NamazuModule.IgnoredException) { }
             catch (Exception ex)
             {
-                PluginUI.Log(ex.ToString());
+                PluginUI.Log(I18n.Translate("PostNamazu/DoActionFail", "执行 {0} 动作时遇到错误：{1}", command, ex.Message + "\n" + ex.StackTrace));
             }
         }
 

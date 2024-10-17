@@ -28,6 +28,7 @@ namespace PostNamazu.Common
             ["grpLang"]                         = new() { [Language.EN] = "Language",                   [Language.CN] = "语言" },
             ["grpWaymarks"]                     = new() { [Language.EN] = "Waymarks",                   [Language.CN] = "场地标点" },
             ["ImportWaymarksForm"]              = new() { [Language.EN] = "Import waymarks",            [Language.CN] = "导入场地标点" },
+            ["ImportWaymarksForm/btnDefault"]   = new() { [Language.EN] = "Fill in default data",       [Language.CN] = "填入默认数据" },
             ["ImportWaymarksForm/btnPlace"]     = new() { [Language.EN] = "Import as local waymarks",   [Language.CN] = "导入为本地标点" },
             ["ImportWaymarksForm/btnPublic"]    = new() { [Language.EN] = "Import as public waymarks",  [Language.CN] = "导入为公开标点" },
             ["ImportWaymarksForm/grpMain"]      = new() { [Language.EN] = "Input waymarks JSON string", [Language.CN] = "输入标点 JSON 字符串" },
@@ -40,10 +41,12 @@ namespace PostNamazu.Common
             ["ImportWaymarksForm/Local"] = "Waymarks applied locally.",
             ["ImportWaymarksForm/Public"] = "Waymarks have been made public.",
             ["NamazuModule/EmptyCommand"] = "Empty command.",
+            ["NamazuModule/GetOffsetsFail"] = "Failed to initialize the module {0}: \n{1}",
             ["NamazuModule/XivProcNotFound"] = "FFXIV process not found.",
             ["PostNamazu"] = "PostNamazu",
             ["PostNamazu/ActionIgnored"] = "Action Ignored: {0}: {1}",
             ["PostNamazu/ActionNotFound"] = "Unsupported operation: {0}",
+            ["PostNamazu/DoActionFail"] = "Exception when executing action {0}: \n{1}",
             ["PostNamazu/HttpException"] = "Unable to start listening on HTTP port {0}: \n{1}",
             ["PostNamazu/HttpStart"] = "Started HTTP listening on port {0}.",
             ["PostNamazu/HttpStop"] = "HTTP listening stopped.",
@@ -69,6 +72,9 @@ namespace PostNamazu.Common
             ["PostNamazuUi/CfgReset"] = "Configuration has been reset.",
             ["PostNamazuUi/ExportWaymarks"] = "Waymarker text has been copied to the clipboard.",
             ["PostNamazuUi/ExportWaymarksFail"] = "Failed to read existing waymarkers:\n{0}",
+            ["SigScanner/ResultMultiple"] = "Scanned{0} and found {1} memory signatures, unable to determine a unique location.",
+            ["SigScanner/ResultNone"] = "Scanned{0} and did not find the required memory signatures.",
+
         };
 
         public static string Translate(string key, string CN, params object[] args)

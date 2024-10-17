@@ -22,10 +22,17 @@ namespace PostNamazu.Actions
         public override void GetOffsets()
         {
             base.GetOffsets();
-            MarkingController = SigScanner.GetStaticAddressFromSig("48 8D 0D ?? ?? ?? ?? 4C 8B 85", 3);
+            MarkingController = SigScanner.GetStaticAddressFromSig("48 8D 0D ?? ?? ?? ?? 4C 8B 85", 3, nameof(MarkingController));
             // 41 D1 C0 88 81 ? ? ? ? 8B 42 04 
             Waymarks = MarkingController + 0x1E0;
-            ExecuteCommandPtr = SigScanner.ScanText("48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 8B E9 41 8B D9 48 8B 0D ?? ?? ?? ?? 41 8B F8 8B F2");
+            try
+            {
+                ExecuteCommandPtr = SigScanner.ScanText("E8 ?? ?? ?? ?? 48 83 C4 ?? C3 CC CC CC CC CC CC CC CC CC CC CC CC 48 83 EC ?? 45 0F B6 C0", nameof(ExecuteCommandPtr));
+            }
+            catch 
+            {   // 可能和其他插件冲突，加一个备用
+                //ExecuteCommandPtr = SigScanner.ScanText("48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 8B E9 41 8B D9 48 8B 0D ?? ?? ?? ?? 41 8B F8 8B F2", nameof(ExecuteCommandPtr));
+            }
         }
 
         /// <summary>

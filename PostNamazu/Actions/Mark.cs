@@ -37,6 +37,14 @@ namespace PostNamazu.Actions
 
         private FFXIV_ACT_Plugin.Common.Models.Combatant GetActor(uint? id, string name)
         {
+            if (id is (0xE0000000 or 0xE000000))
+            {
+                FFXIV_ACT_Plugin.Common.Models.Combatant actor = new()
+                {
+                    ID = 0xE0000000
+                };
+                return actor;
+            }
             var combatants = FFXIV_ACT_Plugin.DataRepository.GetCombatantList().Where(i => !string.IsNullOrEmpty(i.Name) && i.ID != 0xE0000000);
             return combatants.FirstOrDefault(i => i.ID == id) 
                 ?? combatants.FirstOrDefault(i => i.Name == name)

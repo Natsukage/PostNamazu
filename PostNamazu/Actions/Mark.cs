@@ -19,8 +19,15 @@ namespace PostNamazu.Actions
             base.GetOffsets();
 
             //char __fastcall sub_1407A6A60(__int64 g_MarkingController, __int64 MarkType, __int64 ActorID)
-            MarkingFunc = base.SigScanner.ScanText("48 89 5C 24 10 48 89 6C 24 18 57 48 83 EC 20 8D 42", nameof(MarkingFunc)); //正确
-            LocalMarkingFunc = base.SigScanner.ScanText("E8 ?? ?? ?? ?? 4C 8B C5 8B D7 48 8B CB E8", nameof(LocalMarkingFunc)); //正确
+            try
+            {
+                MarkingFunc = SigScanner.ScanText("E8 ?? ?? ?? ?? 84 C0 74 ?? 48 8B 06 48 8B CE FF 50 ?? 48 8B C8 BA ?? ?? ?? ?? E8 ?? ?? ?? ?? 33 C0 E9", nameof(MarkingFunc));
+            }
+            catch
+            {
+                MarkingFunc = SigScanner.ScanText("48 89 5C 24 10 48 89 6C 24 18 57 48 83 EC 20 8D 42", nameof(MarkingFunc));
+            }
+            LocalMarkingFunc = SigScanner.ScanText("E8 ?? ?? ?? ?? 4C 8B C5 8B D7 48 8B CB E8", nameof(LocalMarkingFunc)); //正确
             MarkingController = SigScanner.GetStaticAddressFromSig("48 8D 0D ?? ?? ?? ?? 4C 8B 85", 3, nameof(MarkingController)); //正确
         }
         [Command("mark")]

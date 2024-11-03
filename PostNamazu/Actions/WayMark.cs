@@ -31,7 +31,7 @@ namespace PostNamazu.Actions
             }
             catch 
             {   // 可能和其他插件冲突，加一个备用
-                //ExecuteCommandPtr = SigScanner.ScanText("48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 8B E9 41 8B D9 48 8B 0D ?? ?? ?? ?? 41 8B F8 8B F2", nameof(ExecuteCommandPtr));
+                ExecuteCommandPtr = SigScanner.ScanText("48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 8B E9 41 8B D9 48 8B 0D ?? ?? ?? ?? 41 8B F8 8B F2", nameof(ExecuteCommandPtr));
             }
         }
 
@@ -206,7 +206,7 @@ namespace PostNamazu.Actions
             try
             {
                 Monitor.Enter(assemblyLock, ref flag);
-                if (waymarks?.FirstOrDefault(waymark => waymark?.Active != false) == null) 
+                if (waymarks == null || waymarks.All(waymark => waymark?.Active == false)) 
                 {   // clear all
                     Memory.CallInjected64<IntPtr>(ExecuteCommandPtr, 313, 0, 0, 0, 0);
                     if (waymarks == null)
@@ -216,20 +216,19 @@ namespace PostNamazu.Actions
                 }
                 else
                 {
-                    int idx = 0;
+                    int idx = -1;
                     foreach (var waymark in waymarks)
                     {
+                        idx++;
                         if (waymark == null) continue;
                         if (waymark.Active)
                         {   // mark single
                             Memory.CallInjected64<IntPtr>(ExecuteCommandPtr, 317, idx, (int)(waymark.X * 1000), (int)(waymark.Y * 1000), (int)(waymark.Z * 1000));
-                            
                         }
                         else
                         {   // clear single
                             Memory.CallInjected64<IntPtr>(ExecuteCommandPtr, 318, idx, 0, 0, 0);
                         }
-                        idx++;
                     }
                 }
             }

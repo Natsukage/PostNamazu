@@ -202,27 +202,17 @@ namespace PostNamazu
         /// </summary>
         private void Attach()
         {
-            try {
-                Memory = new ExternalProcessMemory(FFXIV, true, false, _entrancePtr, false, 5, true);
-                PluginUI.Log(I18n.Translate("PostNamazu/XivProcInject", "已找到 FFXIV 进程 {0}。", FFXIV.Id));
-                State = StateEnum.Ready;
-            }
-            catch (Exception ex) {
-                MessageBox.Show(
-                    I18n.Translate("PostNamazu/XivProcInjectException", "注入 FFXIV 进程时发生错误！\n{0}", ex),
-                    I18n.Translate("PostNamazu", "鲶鱼精邮差"), 
-                    MessageBoxButtons.OK, MessageBoxIcon.Error
-                    );
-                Detach();
-                State = StateEnum.Failure;
-            }
-            _frameworkPtrPtr = IntPtr.Zero;
-            _isCN = null;
-            GetRegion();
+            Memory = new ExternalProcessMemory(FFXIV, true, false, _entrancePtr, false, 5, true);
+            PluginUI.Log(I18n.Translate("PostNamazu/XivProcInject", "已找到 FFXIV 进程 {0}。", FFXIV.Id));
+            State = StateEnum.Ready;
+
             foreach (var m in Modules)
             {
                 m.State = StateEnum.Waiting;
             }
+            _frameworkPtrPtr = IntPtr.Zero;
+            _isCN = null;
+            GetRegion();
             foreach (var m in Modules)
             {
                 m.Setup();
@@ -234,10 +224,14 @@ namespace PostNamazu
         /// </summary>
         private void Detach()
         {
-            try {
-                foreach (var m in Modules)
-                {                    m.State = StateEnum.NotReady;
-                }
+            FFXIV = null;
+            _frameworkPtrPtr = IntPtr.Zero;
+            foreach (var m in Modules)
+            {
+                m.State = StateEnum.NotReady;
+            }
+            try 
+            {
                 if (Memory != null && !Memory.Process.HasExited)
                     Memory.Dispose();
             }
@@ -341,7 +335,15 @@ namespace PostNamazu
         {
             if (FrameworkPtrPtr != IntPtr.Zero) // scanning FrameworkPtrPtr
             {
-                byte language = Memory.Read<byte>(FrameworkPtr + 0x580);
+                byte language;
+                try
+                {
+                    language = Memory.Read<byte>(FrameworkPtr + 0x580);
+                }
+                catch
+                {
+                    throw new Exception(I18n.Translate("PostNamazu/ReadMemoryFail", "初始化时读取内存失败，可能是卫月等插件所致。"));
+                }
                 bool? result = language switch
                 {
                     0 or 1 or 2 or 3 => false,
@@ -365,31 +367,54 @@ namespace PostNamazu
         {             
             get
             {
-                if (_frameworkPtrPtr != IntPtr.Zero)
-                { 
-                    return _frameworkPtrPtr;
-                }
-                try
-                {   // 7.0 CN
-                    var sigStart = SigScanner.ScanText("49 8B C4 48 8B 0D");
-                    _frameworkPtrPtr = sigStart + 24 + Memory.Read<int>(sigStart + 20);
-                    return _frameworkPtrPtr;
-                } 
-                catch { }
-                try
-                {   // 7.0 global
-                    var sigStart = SigScanner.ScanText("49 8B DC 48 89 1D");
-                    _frameworkPtrPtr = sigStart + 10 + Memory.Read<int>(sigStart + 6);
-                    return _frameworkPtrPtr;
-                } 
-                catch 
+                if (_frameworkPtrPtr == IntPtr.Zero)
                 {
-                    PluginUI.Log(I18n.Translate("PostNamazu/XivFrameworkNotFound", "未找到 Framework 的内存签名，部分功能无法使用，可能需要更新插件版本。"));
-                    return IntPtr.Zero; 
+                    IntPtr sigStart; int offset;
+                    try
+                    {   // 7.0 CN
+                        sigStart = SigScanner.ScanText("49 8B C4 48 8B 0D ?? ?? ?? ?? 48 8D 15 ?? ?? ?? ?? 48 89 05 ?? ?? ?? ??");
+                        offset = 20;
+                    }
+                    catch 
+                    {
+                        try
+                        {   // 7.0 global
+                            sigStart = SigScanner.ScanText("49 8B DC 48 89 1D ?? ?? ?? ??");
+                            offset = 6;
+                        }
+                        catch
+                        {
+                            PluginUI.Log(I18n.Translate("PostNamazu/XivFrameworkNotFound", "未找到 Framework 的内存签名，部分功能无法使用，可能需要更新插件版本。"));
+                            return IntPtr.Zero;
+                        }
+                    }
+                    try
+                    {
+                        _frameworkPtrPtr = sigStart + (offset + 4) + Memory.Read<int>(sigStart + offset);
+                    }
+                    catch
+                    { 
+                        throw new Exception(I18n.Translate("PostNamazu/ReadMemoryFail", "初始化时读取内存失败，可能是卫月等插件所致。"));
+                    }
+                }
+                return _frameworkPtrPtr;
+            }
+        }
+
+        public IntPtr FrameworkPtr
+        {
+            get
+            {
+                try
+                {
+                    return Memory.Read<IntPtr>(FrameworkPtrPtr);
+                }
+                catch
+                {
+                    throw new Exception(I18n.Translate("PostNamazu/ReadMemoryFail", "初始化时读取内存失败，可能是卫月等插件所致。"));
                 }
             }
         }
-        public IntPtr FrameworkPtr => Memory.Read<IntPtr>(FrameworkPtrPtr);
 
         private void LogRegion()
         {
@@ -407,27 +432,42 @@ namespace PostNamazu
         /// <param name="e"></param>
         private void ProcessSwitcher(object sender, DoWorkEventArgs e)
         {
-            while (true) {
-                if (_processSwitcher.CancellationPending) {
+            while (true) 
+            {
+                if (_processSwitcher.CancellationPending)
+                {
                     e.Cancel = true;
                     break;
                 }
-                Process currentXiv = GetFFXIVProcess();
-                if (FFXIV != currentXiv)
+                try
                 {
-                    State = StateEnum.Waiting;
-                    Detach();
-                    FFXIV = currentXiv;
-                    if (FFXIV == null) 
-                        State = StateEnum.NotReady;
-                    else if (GetOffsets())
-                        Attach();  // State = StateEnum.Ready or NotReady;
-                    else
-                        State = StateEnum.Failure;
+                    Process currentXiv = GetFFXIVProcess();
+                    if (FFXIV != currentXiv)
+                    {
+                        State = StateEnum.Waiting;
+                        Detach();
+                        FFXIV = currentXiv;
+                        if (FFXIV == null)
+                            State = StateEnum.NotReady;
+                        else if (GetOffsets())
+                        { 
+                            Attach(); // => ready
+                        }
+                        else
+                            State = StateEnum.Failure;
+                    }
+                    else // process not changed
+                    {
+                        if (FFXIV == null && State != StateEnum.NotReady)
+                            State = StateEnum.NotReady;
+                    }
                 }
-                else // process not changed
-                    if (FFXIV == null) 
-                        State = StateEnum.NotReady;
+                catch (Exception ex)
+                {
+                    PluginUI.Log(I18n.Translate("PostNamazu/XivProcInjectException", "注入 FFXIV 进程时发生错误，正在重试：\n{0}", ex.Message + " \n" + ex.StackTrace));
+                    State = StateEnum.Failure;
+                    Detach();
+                }
                 Thread.Sleep(3000);
             }
         }

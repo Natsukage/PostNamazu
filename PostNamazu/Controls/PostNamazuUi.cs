@@ -1,5 +1,6 @@
 ﻿﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -199,6 +200,34 @@ namespace PostNamazu
                 I18n.CurrentLanguage = I18n.Language.CN;
             }
             TranslateUi();
+        }
+
+        /// <summary> 根据模组状态更新对应动作的颜色。</summary>
+        /// <param name="actionName">模组的类名（Type.Name）。</param>
+        internal void UpdateActionColorByState(string actionName, PostNamazu.StateEnum state)
+        {
+            if (flowLayoutActions.InvokeRequired)
+            {
+                flowLayoutActions.Invoke(new Action(() => UpdateActionColorByState(actionName, state)));
+                return;
+            }
+            var checkBox = flowLayoutActions.Controls.OfType<CheckBox>().FirstOrDefault(chk => chk.Text == actionName);
+            if (checkBox == null) return;
+            switch (state)
+            {
+                case PostNamazu.StateEnum.Failure:
+                    checkBox.ForeColor = Color.FromArgb(180, 45, 30); // red
+                    break;
+                case PostNamazu.StateEnum.Waiting:
+                    checkBox.ForeColor = Color.FromArgb(150, 105, 0); // yellow
+                    break;
+                case PostNamazu.StateEnum.Ready:
+                    checkBox.ForeColor = Color.FromArgb(15, 90, 60); // green
+                    break;
+                case PostNamazu.StateEnum.NotReady:
+                    checkBox.ForeColor = Color.Black;
+                    break;
+            }
         }
 
         internal void TranslateUi()

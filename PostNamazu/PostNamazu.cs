@@ -43,6 +43,32 @@ namespace PostNamazu
 
         private List<NamazuModule> Modules = new();
 
+        /// <summary> 插件或模组的当前状态。 </summary>
+        public enum StateEnum 
+        { 
+            /// <summary> 尚未开始。 </summary>
+            NotReady,
+            /// <summary> 扫描失败。 </summary>
+            Failure,
+            /// <summary> 正在启动或尝试扫描。 </summary>
+            Waiting,
+            /// <summary> 扫描成功，已预备。 </summary>
+            Ready
+        };
+
+        private StateEnum _state = StateEnum.Waiting;
+        public StateEnum State 
+        { 
+            get => _state;
+            private set
+            {
+                _state = value;
+#if DEBUG
+                PluginUI.Log($"插件状态变更：{value}");
+#endif
+            }
+        }
+
         #region Init
         public void InitPlugin(TabPage pluginScreenSpace, Label pluginStatusText)
         {
@@ -55,7 +81,6 @@ namespace PostNamazu
             PluginUI.Log(I18n.Translate("PostNamazu/PluginVersion", "插件版本：{0}。", Assembly.GetExecutingAssembly().GetName().Version));
 
             FFXIV_ACT_Plugin = GetFFXIVPlugin();
-
 
             //目前解析插件有bug，在特定情况下无法正常触发ProcessChanged事件。因此只能通过后台线程实时监控
             //FFXIV_ACT_Plugin.DataSubscription.ProcessChanged += ProcessChanged;
@@ -105,7 +130,6 @@ namespace PostNamazu
                 PluginUI.Log($"Initalizing Module: {t.Name}");
 #endif
                 var module = (NamazuModule)Activator.CreateInstance(t);
-                module.Init(this);
                 Modules.Add(module);
                 PluginUI.RegisterAction(t.Name);
                 var commands = module.GetType().GetMethods().Where(method => method.GetCustomAttributes<CommandAttribute>().Any());
@@ -181,6 +205,7 @@ namespace PostNamazu
             try {
                 Memory = new ExternalProcessMemory(FFXIV, true, false, _entrancePtr, false, 5, true);
                 PluginUI.Log(I18n.Translate("PostNamazu/XivProcInject", "已找到 FFXIV 进程 {0}。", FFXIV.Id));
+                State = StateEnum.Ready;
             }
             catch (Exception ex) {
                 MessageBox.Show(
@@ -189,10 +214,15 @@ namespace PostNamazu
                     MessageBoxButtons.OK, MessageBoxIcon.Error
                     );
                 Detach();
+                State = StateEnum.Failure;
             }
             _frameworkPtrPtr = IntPtr.Zero;
             _isCN = null;
             GetRegion();
+            foreach (var m in Modules)
+            {
+                m.State = StateEnum.Waiting;
+            }
             foreach (var m in Modules)
             {
                 m.Setup();
@@ -205,6 +235,9 @@ namespace PostNamazu
         private void Detach()
         {
             try {
+                foreach (var m in Modules)
+                {                    m.State = StateEnum.NotReady;
+                }
                 if (Memory != null && !Memory.Process.HasExited)
                     Memory.Dispose();
             }
@@ -379,13 +412,22 @@ namespace PostNamazu
                     e.Cancel = true;
                     break;
                 }
-
-                if (FFXIV != GetFFXIVProcess()) {
+                Process currentXiv = GetFFXIVProcess();
+                if (FFXIV != currentXiv)
+                {
+                    State = StateEnum.Waiting;
                     Detach();
-                    FFXIV = GetFFXIVProcess();
-                    if (FFXIV != null && GetOffsets())
-                        Attach();
+                    FFXIV = currentXiv;
+                    if (FFXIV == null) 
+                        State = StateEnum.NotReady;
+                    else if (GetOffsets())
+                        Attach();  // State = StateEnum.Ready or NotReady;
+                    else
+                        State = StateEnum.Failure;
                 }
+                else // process not changed
+                    if (FFXIV == null) 
+                        State = StateEnum.NotReady;
                 Thread.Sleep(3000);
             }
         }

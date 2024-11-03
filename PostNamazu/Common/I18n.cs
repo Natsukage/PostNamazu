@@ -42,6 +42,8 @@ namespace PostNamazu.Common
             ["ImportWaymarksForm/Public"] = "Waymarks have been made public.",
             ["NamazuModule/EmptyCommand"] = "Empty command.",
             ["NamazuModule/GetOffsetsFail"] = "Failed to initialize the module {0}: \n{1}",
+            ["NamazuModule/ModuleInitFail"] = "Module {0} failed to initialize, please check previous error messages.",
+            ["NamazuModule/ModuleNotReady"] = "Module {0} was not initialized.",
             ["NamazuModule/XivProcNotFound"] = "FFXIV process not found.",
             ["PostNamazu"] = "PostNamazu",
             ["PostNamazu/ActionIgnored"] = "Action Ignored: {0}: {1}",

@@ -27,7 +27,15 @@ namespace PostNamazu.Actions
             {
                 MarkingFunc = SigScanner.ScanText("48 89 5C 24 10 48 89 6C 24 18 57 48 83 EC 20 8D 42", nameof(MarkingFunc));
             }
-            LocalMarkingFunc = SigScanner.ScanText("E8 ?? ?? ?? ?? 4C 8B C5 8B D7 48 8B CB E8", nameof(LocalMarkingFunc)); //正确
+            //void __fastcall Client::Game::UI::MarkingController_SetObjectMarker(__int64 manager, unsigned int markingType, Client::Game::Object::GameObjectId a3, unsigned int a4)
+            try
+            {
+                LocalMarkingFunc = SigScanner.ScanText("E8 ?? ?? ?? ?? 4C 8B C5 8B D7 48 8B CB E8", nameof(LocalMarkingFunc));
+            }
+            catch
+            {
+                LocalMarkingFunc = SigScanner.ScanText("40 55 53 56 57 41 57 48 8D 6C 24 ?? 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 45 17 41 8B F1 49 8B D8", nameof(LocalMarkingFunc));
+            }
             MarkingController = SigScanner.GetStaticAddressFromSig("48 8D 0D ?? ?? ?? ?? 4C 8B 85", 3, nameof(MarkingController)); //正确
         }
         [Command("mark")]

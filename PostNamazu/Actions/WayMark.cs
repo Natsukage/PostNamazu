@@ -201,11 +201,8 @@ namespace PostNamazu.Actions
         /// <param name="waymarks">标点，传入 null 时清空标点，单个标点为 null 时忽略。</param>
         public void Public(WayMarks waymarks)
         {
-            var assemblyLock = Memory.Executor.AssemblyLock;
-            var flag = false;
-            try
+            ExecuteWithLock(() => 
             {
-                Monitor.Enter(assemblyLock, ref flag);
                 if (waymarks == null || waymarks.All(waymark => waymark?.Active == false)) 
                 {   // clear all
                     Memory.CallInjected64<IntPtr>(ExecuteCommandPtr, 313, 0, 0, 0, 0);
@@ -230,12 +227,8 @@ namespace PostNamazu.Actions
                             Memory.CallInjected64<IntPtr>(ExecuteCommandPtr, 318, idx, 0, 0, 0);
                         }
                     }
-                }
             }
-            finally
-            {
-                if (flag) Monitor.Exit(assemblyLock);
-            }
+            });
         }
 
         public bool GetInCombat()

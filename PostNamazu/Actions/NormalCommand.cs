@@ -48,11 +48,8 @@ namespace PostNamazu.Actions
             CheckChannel(ref command);
             PluginUI.Log(command);
 
-            var assemblyLock = Memory.Executor.AssemblyLock;
-
-            var flag = false;
-            try {
-                Monitor.Enter(assemblyLock, ref flag);
+            ExecuteWithLock(() =>
+            {
                 var array = Encoding.UTF8.GetBytes(command);
                 using AllocatedMemory allocatedMemory = Memory.CreateAllocatedMemory(400), allocatedMemory2 = Memory.CreateAllocatedMemory(array.Length + 30);
                 allocatedMemory2.AllocateOfChunk("cmd", array.Length);
@@ -66,11 +63,8 @@ namespace PostNamazu.Actions
                 allocatedMemory.Write("tLength", array.Length + 1);
                 allocatedMemory.Write("t3", 0x00);
                 var uiModulePtr = Memory.CallInjected64<IntPtr>(GetUiModulePtr, PostNamazu.FrameworkPtr);
-                _ = Memory.CallInjected64<int>(ProcessChatBoxPtr, uiModulePtr,allocatedMemory.Address, IntPtr.Zero, (byte)0);
-            }
-            finally {
-                if (flag) Monitor.Exit(assemblyLock);
-            }
+                _ = Memory.CallInjected64<int>(ProcessChatBoxPtr, uiModulePtr, allocatedMemory.Address, IntPtr.Zero, (byte)0);
+            });
         }
 
         protected override Dictionary<string, Dictionary<Language, string>> LocalizedStrings { get; } = new()

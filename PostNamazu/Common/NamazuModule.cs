@@ -4,6 +4,7 @@ using PostNamazu.Common;
 using GreyMagic;
 using System.Collections.Generic;
 using static PostNamazu.Common.I18n;
+using System.Threading;
 
 namespace PostNamazu.Actions
 {
@@ -127,6 +128,34 @@ namespace PostNamazu.Actions
 
         internal class IgnoredException : Exception {
             internal IgnoredException(string msg) : base(msg) { }
+        }
+
+        public static void ExecuteWithLock(Action action)
+        {
+            bool lockTaken = false;
+            try
+            {
+                Monitor.Enter(Memory.Executor.AssemblyLock, ref lockTaken);
+                action();
+            }
+            finally 
+            { 
+                if (lockTaken) Monitor.Exit(Memory.Executor.AssemblyLock); 
+            }
+        }
+
+        public static T ExecuteWithLock<T>(Func<T> function)
+        {
+            bool lockTaken = false;
+            try
+            {
+                Monitor.Enter(Memory.Executor.AssemblyLock, ref lockTaken);
+                return function();
+            }
+            finally 
+            { 
+                if (lockTaken) Monitor.Exit(Memory.Executor.AssemblyLock); 
+            }
         }
     }
 

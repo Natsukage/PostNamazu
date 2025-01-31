@@ -65,18 +65,12 @@ namespace PostNamazu.Actions
             {
                 PluginUI.Log($"Mark: Actor={actor.Name} (0x{actor.ID:X8}), Type={markingType} ({(int)markingType}), LocalOnly={localOnly}");
             }
-            var assemblyLock = Memory.Executor.AssemblyLock;
-            var flag = false;
-            try
+            ExecuteWithLock(() =>
             {
-                Monitor.Enter(assemblyLock, ref flag);
                 _ = !localOnly
                     ? Memory.CallInjected64<char>(MarkingFunc, MarkingController, markingType, actor.ID) 
                     : Memory.CallInjected64<char>(LocalMarkingFunc, MarkingController, markingType - 1, actor.ID, 0); //本地标点的markingType从0开始，因此需要-1
-            }
-            finally {
-                if (flag) Monitor.Exit(assemblyLock);
-            }
+            });
         }
 
         protected override Dictionary<string, Dictionary<Language, string>> LocalizedStrings { get; } = new()

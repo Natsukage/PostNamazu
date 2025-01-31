@@ -1,5 +1,4 @@
-using PostNamazu.Attributes;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
@@ -17,8 +16,8 @@ namespace PostNamazu.Actions
         public override void GetOffsets()
         {
             base.GetOffsets();
-            ProcessChatBoxPtr = SigScanner.ScanText("E8 ?? ?? ?? ?? FE 86 ?? ?? ?? ?? C7 86", nameof(ProcessChatBoxPtr));
-            GetUiModulePtr = SigScanner.ScanText("E8 ?? ?? ?? ?? 80 7B 1D 01", nameof(GetUiModulePtr));
+            ProcessChatBoxPtr = SigScanner.ScanText("E8 * * * * FE 86 ? ? ? ? C7 86", nameof(ProcessChatBoxPtr));
+            GetUiModulePtr = SigScanner.ScanText("E8 * * * * 80 7B 1D 01", nameof(GetUiModulePtr));
         }
 
         const string CurrentChannelPrefix = "/current ";
@@ -63,7 +62,7 @@ namespace PostNamazu.Actions
                 var raptureModule = Memory.CallInjected64<IntPtr>(Memory.Read<IntPtr>(Memory.Read<IntPtr>(uiModulePtr) + (0x8 * 9)), uiModulePtr);
                 _ = Memory.CallInjected64<int>(ProcessChatBoxPtr, raptureModule, allocatedMemory.Address, uiModulePtr);
             });
-            }
+        }
 
         protected override Dictionary<string, Dictionary<Language, string>> LocalizedStrings { get; } = new()
         {

@@ -66,7 +66,7 @@ namespace PostNamazu.Common
             ["PostNamazu/XivDetectMemRegionGlobal"] = "Set region to global server (detected by memory).",
             ["PostNamazu/XivDetectRegionCN"] = "Set region to Chinese server (detected by player name).",
             ["PostNamazu/XivDetectRegionGlobal"] = "Set region to global server (detected by player name).",
-            ["PostNamazu/XivFrameworkNotFound"] = "Failed to find memory signature for Framework, some features will not be available. The plugin may need to be updated.",
+            ["PostNamazu/XivFrameworkNotFound"] = "Failed to find memory signature for Framework, some features will not be available. The plugin may need to be updated. Exception: {0}",
             ["PostNamazu/XivProcInject"] = "Found FFXIV process {0}.",
             ["PostNamazu/XivProcInjectException"] = "Error when injecting into FFXIV process, retry later: \n{0}",
             ["PostNamazu/XivProcInjectFail"] = "Unable to inject into the current FFXIV process, it may have already been injected by another process. Please try restarting the game.",
@@ -75,6 +75,7 @@ namespace PostNamazu.Common
             ["PostNamazuUi/CfgReset"] = "Configuration has been reset.",
             ["PostNamazuUi/ExportWaymarks"] = "Waymarker text has been copied to the clipboard.",
             ["PostNamazuUi/ExportWaymarksFail"] = "Failed to read existing waymarkers:\n{0}",
+            ["SigScanner/RelAddressingFormatError"] = "Relative addressing sigcode ({0}) must contain exactly 4 consecutive stars (* * * *) and no additional * elsewhere.",
             ["SigScanner/ResultMultiple"] = "Scanned{0} and found {1} memory signatures, unable to determine a unique location.",
             ["SigScanner/ResultNone"] = "Scanned{0} and did not find the required memory signatures.",
 

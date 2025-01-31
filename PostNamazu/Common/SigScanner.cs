@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace PostNamazu.Common
@@ -375,33 +376,27 @@ namespace PostNamazu.Common
 
         }
 
-
         public T ScanText<T>(string pattern, Func<IntPtr, T> visitor, string name = null)
         {
-            var results = FindPattern(pattern);
-            if (results.Count > 1)
-            {
-                throw new ArgumentException(I18n.Translate(
-                    "SigScanner/ResultMultiple",
-                    "扫描{0}时匹配到 {1} 处内存签名，无法确定唯一位置。",
-                    name == null ? "" : $" {name} ",
-                    results.Count
-                ));
-            }
-            if (results.Count == 0)
-            {
-                throw new ArgumentException(I18n.Translate(
-                    "SigScanner/ResultNone",
-                    "扫描{0}时未匹配到所需的内存签名。",
-                    name == null ? "" : $" {name} "
-                ));
-            }
-            return visitor(results[0]);
+            var result = ScanText(pattern, name);
+            return visitor(result);
         }
 
+        /// <summary>
+        /// 从内存中扫描指定的内存签名，返回唯一匹配的地址，否则报错。<br /><br />
+        /// 
+        /// ? 或 ?? 表示普通通配符，如：<br />
+        /// <c> 48 89 5C 24 ?? ... </c><br /><br />
+        /// 
+        /// * 或 ** 表示相对寻址通配符，如果使用，则仅能有连续四个，如：<br />
+        /// <c> 48 8D 0D * * * * 4C 8B 85 ... </c> <br />
+        /// <c> E8 * * * * 48 83 C4 ? E9 ? ? ? ? ... </c> <br />
+        /// 相对寻址计算方式为 * * * * 后的地址 + 这四字节对应的 int 偏移量。<br /><br />
+        /// </summary>
         public IntPtr ScanText(string pattern, string name = null)
         {
-            var results = FindPattern(pattern);
+            (var bytes, int? relAddressingOffset) = HexToBytes(pattern);
+            var results = FindPattern(bytes);
             if (results.Count > 1)
             {
                 throw new ArgumentException(I18n.Translate(
@@ -419,24 +414,25 @@ namespace PostNamazu.Common
                     name == null ? "" : $" {name} "
                 ));
             }
-            var scanRet = results[0];
-            var insnByte = ReadByte(scanRet);
-            if (insnByte == 0xE8 || insnByte == 0xE9)
-                return ReadCallSig(scanRet);
-            return scanRet;
+
+            IntPtr patternPtr = results[0];
+            if (relAddressingOffset.HasValue) // 指定相对寻址
+            {
+                IntPtr starPtr = patternPtr + relAddressingOffset.Value; // 第一个 * 的地址
+                patternPtr = starPtr + 4 + ReadInt32(starPtr);
+            }
+#if DEBUG
+            PostNamazu.Plugin.PluginUI.Log($"[Scanner] {name ?? ""} ({pattern}) @ {patternPtr} (jump={relAddressingOffset?.ToString() ?? "null"})");
+#endif 
+            return patternPtr;
         }
 
-        private IntPtr ReadCallSig(IntPtr sigLocation) {
-            var jumpOffset = ReadInt32(IntPtr.Add(sigLocation, 1));
-            return IntPtr.Add(sigLocation, 5 + jumpOffset);
-        }
-
-
-        public List<IntPtr> FindPattern(string pattern) {
-            var results = Find(HexToBytes(pattern));
-            for (int i = 0; i < results.Count; i++) {
+        public List<IntPtr> FindPattern(List<int> pattern)
+        {
+            var results = Find(pattern);
+            for (int i = 0; i < results.Count; i++)
+            {
                 results[i] = _baseAddress + (int)results[i];
-
             }
             return results;
         }
@@ -455,7 +451,7 @@ namespace PostNamazu.Common
 
         bool ByteMatch(byte[] bytes, int start, List<int> pattern) {
             for (int i = start, j = 0; j < pattern.Count; i++, j++) {
-                if (pattern[j] == -1)
+                if (pattern[j] < 0)
                     continue;
 
                 if (bytes[i] != pattern[j])
@@ -464,29 +460,32 @@ namespace PostNamazu.Common
             return true;
         }
 
-        List<int> HexToBytes(string hex) {
-            List<int> bytes = new List<int>();
+        (List<int>, int?) HexToBytes(string hex) 
+        {
+            List<int> bytes = hex.Trim().Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(s =>
+            {
+                return s switch
+                {
+                    "*" or "**" => -2,
+                    "?" or "??" => -1,
+                    _ => byte.Parse(s, NumberStyles.AllowHexSpecifier),
+                };
+            }).ToList();
 
-            for (int i = 0; i < hex.Length - 1;) {
-                if (hex[i] == '?') {
-                    if (hex[i + 1] == '?')
-                        i++;
-                    i++;
-                    bytes.Add(-1);
-                    continue;
+            int? jump = null; // relative addressing
+            var idx = bytes.IndexOf(-2);
+            if (idx >= 0)
+            {
+                jump = idx;
+                if (jump > bytes.Count - 4 ||
+                    bytes.Skip(jump.Value).Take(4).Any(b => b != -2) ||   // these 4 digits must be *
+                    bytes.Skip(jump.Value + 4).Any(b => b == -2))         // no more * after these 4 digits
+                {
+                    throw new FormatException(I18n.Translate("SigScanner/RelAddressingFormatError",
+                        "相对寻址 ({0}) 的内存签名必须含四个连续星号通配符（* * * *），且无额外星号。", hex));
                 }
-                if (hex[i] == ' ') {
-                    i++;
-                    continue;
-                }
-
-                string byteString = hex.Substring(i, 2);
-                var _byte = byte.Parse(byteString, NumberStyles.AllowHexSpecifier);
-                bytes.Add(_byte);
-                i += 2;
             }
-
-            return bytes;
+            return (bytes, jump);
         }
 
         /// <summary>

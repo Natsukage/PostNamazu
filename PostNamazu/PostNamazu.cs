@@ -277,7 +277,7 @@ namespace PostNamazu
             }
 
             try {
-                _entrancePtr = SigScanner.ScanText("E9 ?? ?? ?? ?? 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 48 83 B9");
+                _entrancePtr = SigScanner.ScanText("E9 * * * * 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 48 83 B9");
                 return true;
             }
             catch (ArgumentException) {
@@ -367,37 +367,27 @@ namespace PostNamazu
         {             
             get
             {
-                if (_frameworkPtrPtr == IntPtr.Zero)
-                {
-                    IntPtr sigStart; int offset;
-                    try
-                    {   // 7.0 CN
-                        sigStart = SigScanner.ScanText("49 8B C4 48 8B 0D ?? ?? ?? ?? 48 8D 15 ?? ?? ?? ?? 48 89 05 ?? ?? ?? ??");
-                        offset = 20;
-                    }
-                    catch 
-                    {
-                        try
-                        {   // 7.0 global
-                            sigStart = SigScanner.ScanText("49 8B DC 48 89 1D ?? ?? ?? ??");
-                            offset = 6;
-                        }
-                        catch
-                        {
-                            PluginUI.Log(I18n.Translate("PostNamazu/XivFrameworkNotFound", "未找到 Framework 的内存签名，部分功能无法使用，可能需要更新插件版本。"));
-                            return IntPtr.Zero;
-                        }
-                    }
-                    try
-                    {
-                        _frameworkPtrPtr = sigStart + (offset + 4) + Memory.Read<int>(sigStart + offset);
-                    }
-                    catch
-                    { 
-                        throw new Exception(I18n.Translate("PostNamazu/ReadMemoryFail", "初始化时读取内存失败，可能是卫月等插件所致。"));
-                    }
+                if (_frameworkPtrPtr != IntPtr.Zero)
+                { 
+                    return _frameworkPtrPtr;
                 }
-                return _frameworkPtrPtr;
+                try // 7.0 CN
+                {
+                    _frameworkPtrPtr = SigScanner.ScanText("49 8B C4 48 8B 0D ? ? ? ? 48 8D 15 ? ? ? ? 48 89 05 * * * *", nameof(_frameworkPtrPtr));
+                    return _frameworkPtrPtr;
+                }
+                catch { }
+                try // 7.0 global
+                {
+                    _frameworkPtrPtr = SigScanner.ScanText("49 8B DC 48 89 1D * * * *", nameof(_frameworkPtrPtr));
+                    return _frameworkPtrPtr;
+                }
+                catch (Exception ex)
+                {
+                    PluginUI.Log(I18n.Translate("PostNamazu/XivFrameworkNotFound", 
+                        "未找到 Framework 的内存签名，部分功能无法使用，可能需要更新插件版本。错误：{0}", ex.Message));
+                    return IntPtr.Zero;
+                }
             }
         }
 

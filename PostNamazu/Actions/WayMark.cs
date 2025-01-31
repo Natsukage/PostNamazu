@@ -22,12 +22,11 @@ namespace PostNamazu.Actions
         public override void GetOffsets()
         {
             base.GetOffsets();
-            MarkingController = SigScanner.GetStaticAddressFromSig("48 8D 0D ?? ?? ?? ?? 4C 8B 85", 3, nameof(MarkingController));
-            // 41 D1 C0 88 81 ? ? ? ? 8B 42 04 
+            MarkingController = SigScanner.ScanText("48 8D 0D * * * * 4C 8B 85", nameof(MarkingController));
             Waymarks = MarkingController + 0x1E0;
             try
             {
-                ExecuteCommandPtr = SigScanner.ScanText("E8 ?? ?? ?? ?? 48 83 C4 ?? C3 CC CC CC CC CC CC CC CC CC CC CC CC 48 83 EC ?? 45 0F B6 C0", nameof(ExecuteCommandPtr));
+                ExecuteCommandPtr = SigScanner.ScanText("E8 * * * * 48 83 C4 ?? C3 CC CC CC CC CC CC CC CC CC CC CC CC 48 83 EC ?? 45 0F B6 C0", nameof(ExecuteCommandPtr));
             }
             catch 
             {   // 可能和其他插件冲突，加一个备用
@@ -201,12 +200,9 @@ namespace PostNamazu.Actions
         /// <param name="waymarks">标点，传入 null 时清空标点，单个标点为 null 时忽略。</param>
         public void Public(WayMarks waymarks)
         {
-            var assemblyLock = Memory.Executor.AssemblyLock;
-            var flag = false;
-            try
+            ExecuteWithLock(() => 
             {
-                Monitor.Enter(assemblyLock, ref flag);
-                if (waymarks == null || waymarks.All(waymark => waymark?.Active == false)) 
+                if (waymarks == null || waymarks.All(waymark => waymark?.Active == false))
                 {   // clear all
                     Memory.CallInjected64<IntPtr>(ExecuteCommandPtr, 313, 0, 0, 0, 0);
                     if (waymarks == null)
@@ -231,11 +227,7 @@ namespace PostNamazu.Actions
                         }
                     }
                 }
-            }
-            finally
-            {
-                if (flag) Monitor.Exit(assemblyLock);
-            }
+            });
         }
 
         public bool GetInCombat()

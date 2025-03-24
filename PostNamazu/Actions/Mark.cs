@@ -68,9 +68,9 @@ namespace PostNamazu.Actions
             }
             ExecuteWithLock(() =>
             {
-                _ = !localOnly
-                    ? Memory.CallInjected64<char>(MarkingFunc, MarkingController, markingType - 1, actor.ID) //底层函数MarkingType从0开始，需要-1
-                    : Memory.CallInjected64<char>(LocalMarkingFunc, MarkingController, markingType - 1, actor.ID, 0); //本地标点的markingType从0开始，因此需要-1
+                Memory.CallInjected64<char>(LocalMarkingFunc, MarkingController, markingType - 1, actor.ID, 0); //本地标点的markingType从0开始，因此需要-1
+                if (!localOnly)
+                    Memory.CallInjected64<char>(MarkingFunc, MarkingController, markingType - 1, actor.ID); //模仿游戏函数，先执行本地再公开
             });
         }
 

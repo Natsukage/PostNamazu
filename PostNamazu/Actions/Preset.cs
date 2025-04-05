@@ -59,7 +59,7 @@ namespace PostNamazu.Actions
             var UIModule = UIModulePtr;
 
             var WayMarkSlotPtr = UIModule + WayMarkSlotOffset;
-            var WaymarkDataPointer = WayMarkSlotPtr + 64 + (int)(104 * (slotNum - 1));
+            var WaymarkDataPointer = WayMarkSlotPtr + (PostNamazu.IsCN ? 64 : 72) + (int)(104 * (slotNum - 1));
             return WaymarkDataPointer;
         }
 

@@ -266,7 +266,7 @@ namespace PostNamazu
             string data;
             try
             {
-                data = GetCurrentWarmarksString();
+                data = GetCurrentWaymarksString();
                 Clipboard.SetText(data);
                 MessageBox.Show(I18n.Translate("PostNamazuUi/ExportWaymarks", "已将标点文本存入剪贴板。"), "PostNamazu", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
@@ -277,7 +277,7 @@ namespace PostNamazu
             }
         }
 
-        public static string GetCurrentWarmarksString()
+        public static string GetCurrentWaymarksString()
         {
             WayMarks waymarks = PostNamazu.Plugin.GetModuleInstance<WayMark>().ReadCurrentWaymarks();
             return waymarks.ToJsonString();

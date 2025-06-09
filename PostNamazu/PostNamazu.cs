@@ -100,6 +100,7 @@ namespace PostNamazu
             Assembly.Load("GreyMagic"); // 直接加载而非首次调用时延迟加载，防止没开启游戏而没调用 GreyMagic 初始化 Memory 时其他插件找不到 GreyMagic
 
             _lblStatus.Text = I18n.Translate("PostNamazu/PluginInit", "鲶鱼精邮差已启动。");
+            LogACT("Initialized");
         }
 
         public void DeInitPlugin()
@@ -205,6 +206,7 @@ namespace PostNamazu
             Memory = new ExternalProcessMemory(FFXIV, true, false, _entrancePtr, false, 5, true);
             PluginUI.Log(I18n.Translate("PostNamazu/XivProcInject", "已找到 FFXIV 进程 {0}。", FFXIV.Id));
             State = StateEnum.Ready;
+            LogACT("Attached");
 
             foreach (var m in Modules)
             {
@@ -217,6 +219,7 @@ namespace PostNamazu
             {
                 m.Setup();
             }
+            LogACT("ModulesInitialized");
         }
 
         /// <summary>
@@ -413,6 +416,12 @@ namespace PostNamazu
                 ? I18n.Translate("PostNamazu/XivDetectRegionCN", "已设置为国服。")
                 : I18n.Translate("PostNamazu/XivDetectRegionGlobal", "已设置为国际服。")
             );
+        }
+
+        internal void LogACT(string msg)
+        {
+            var log = $"00|{DateTime.Now:O}|FFFF|PostNamazu|{msg}|0000000000000000";
+            ActGlobals.oFormActMain.ParseRawLogLine(false, DateTime.Now, log);
         }
 
         /// <summary>

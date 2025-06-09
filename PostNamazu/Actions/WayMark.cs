@@ -204,7 +204,7 @@ namespace PostNamazu.Actions
             {
                 if (waymarks == null || waymarks.All(waymark => waymark?.Active == false))
                 {   // clear all
-                    Memory.CallInjected64<IntPtr>(ExecuteCommandPtr, 313, 0, 0, 0, 0);
+                    ExecuteCommand(313);
                     if (waymarks == null)
                     {
                         Log(GetLocalizedString("ClearPublic"));
@@ -219,16 +219,23 @@ namespace PostNamazu.Actions
                         if (waymark == null) continue;
                         if (waymark.Active)
                         {   // mark single
-                            Memory.CallInjected64<IntPtr>(ExecuteCommandPtr, 317, idx, (int)(waymark.X * 1000), (int)(waymark.Y * 1000), (int)(waymark.Z * 1000));
+                            ExecuteCommand(317, (uint)idx, UIntEncode(waymark.X), UIntEncode(waymark.Y), UIntEncode(waymark.Z));
                         }
                         else
                         {   // clear single
-                            Memory.CallInjected64<IntPtr>(ExecuteCommandPtr, 318, idx, 0, 0, 0);
+                            ExecuteCommand(318, (uint)idx);
                         }
                     }
                 }
             });
         }
+
+        private uint UIntEncode(float x) => (uint)(x * 1000);
+
+        // 统一使用 uint 调用此内部函数（参数常用于传入 id 等，uint 相比于 int 更合理）
+        // 防止 GreyMagic 多次调用时参数类型不一致报错
+        private void ExecuteCommand(uint command, uint a1 = 0, uint a2 = 0, uint a3 = 0, uint a4 = 0)
+            => Memory.CallInjected64<IntPtr>(ExecuteCommandPtr, command, a1, a2, a3, a4);
 
         public bool GetInCombat()
         {

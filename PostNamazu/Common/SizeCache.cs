@@ -33,7 +33,7 @@ namespace PostNamazu.Common
 
                 var fields = Type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                 _fieldsizes = new int[fields.Length];
-                int i = 0;
+                var i = 0;
                 foreach (var field in fields) {
                     var attr = field.GetCustomAttributes(typeof(FixedBufferAttribute), false);
 
@@ -79,7 +79,7 @@ namespace PostNamazu.Common
                 new[] { typeof(T).MakeByRefType() },
                 typeof(SizeCache<>).Module);
 
-            ILGenerator generator = method.GetILGenerator();
+            var generator = method.GetILGenerator();
 
             // ldarg 0
             generator.Emit(OpCodes.Ldarg_0);
@@ -99,7 +99,7 @@ namespace PostNamazu.Common
                 return Marshal.SizeOf(o);
             }
             catch (Exception) {
-                int totalSize = 0;
+                var totalSize = 0;
                 var fields = t.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
                 foreach (var field in fields) {

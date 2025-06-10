@@ -1,4 +1,7 @@
-﻿﻿using System;
+﻿using Advanced_Combat_Tracker;
+using PostNamazu.Actions;
+using PostNamazu.Common.Localization;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
@@ -7,10 +10,6 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using System.Xml;
-using Advanced_Combat_Tracker;
-using PostNamazu.Actions;
-using PostNamazu.Common;
-using PostNamazu.Models;
 
 namespace PostNamazu
 {
@@ -35,9 +34,9 @@ namespace PostNamazu
             flowLayoutActions.Controls.Add(checkAction);
         }
 
-        private void CheckBoxActions_CheckedChanged(object sender, System.EventArgs e)
+        private void CheckBoxActions_CheckedChanged(object sender, EventArgs e)
         {
-            CheckBox checkbox = (CheckBox)sender;
+            var checkbox = (CheckBox)sender;
             ActionEnabled[checkbox.Text]=checkbox.Checked;
         }
 
@@ -51,15 +50,15 @@ namespace PostNamazu
             AddParserMessage($"{ log.ToInt64():X}");
         }
 
-        public void cmdCopyProblematic_Click(object sender, EventArgs e) => CopyLog(copyAll: true);
+        private void CmdCopyProblematic_Click(object sender, EventArgs e) => CopyLog(copyAll: true);
 
-        public void cmdCopySelection_Click(object sender, EventArgs e) => CopyLog(copyAll: false);
+        private void CmdCopySelection_Click(object sender, EventArgs e) => CopyLog(copyAll: false);
 
         private void CopyLog(bool copyAll)
         {
-            StringBuilder stringBuilder = new StringBuilder();
+            var stringBuilder = new StringBuilder();
             var source = copyAll ? lstMessages.Items.Cast<object>() : lstMessages.SelectedItems.Cast<object>();
-            foreach (object item in source)
+            foreach (var item in source)
             {
                 stringBuilder.AppendLine((item ?? "").ToString());
             }
@@ -80,16 +79,16 @@ namespace PostNamazu
             return base.ProcessCmdKey(ref msg, keyData);
         }
 
-        public void cmdClearMessages_Click(object sender, EventArgs e)
+        public void CmdClearMessages_Click(object sender, EventArgs e)
         {
             lstMessages.Items.Clear();
         }
 
         private int prevTipIdx = -1;
-        private void lstMessages_MouseMove(object sender, MouseEventArgs e)
+        private void LstMessages_MouseMove(object sender, MouseEventArgs e)
         {
-            ListBox lb = sender as ListBox;
-            int index = lb.IndexFromPoint(e.Location);
+            var lb = sender as ListBox;
+            var index = lb.IndexFromPoint(e.Location);
             if (index != prevTipIdx)
             {
                 if (index != -1)
@@ -118,7 +117,7 @@ namespace PostNamazu
             {
                 if (lstMessages.Items.Count > 500)
                     lstMessages.Items.RemoveAt(0);
-                bool scroll = lstMessages.TopIndex == lstMessages.Items.Count - lstMessages.Height / lstMessages.ItemHeight;
+                var scroll = lstMessages.TopIndex == lstMessages.Items.Count - lstMessages.Height / lstMessages.ItemHeight;
                 lstMessages.Items.Add($"[{DateTime.Now:HH:mm:ss}] {message}");
                 if (scroll)
                     lstMessages.TopIndex = lstMessages.Items.Count - lstMessages.Height / lstMessages.ItemHeight;
@@ -134,18 +133,19 @@ namespace PostNamazu
                 try
                 {
                     xdo.Load(SettingsFile);
-                    XmlNode head = xdo.SelectSingleNode("Config");
+                    var head = xdo.SelectSingleNode("Config");
                     TextPort.Text = head?.SelectSingleNode("Port")?.InnerText;
                     if (string.IsNullOrEmpty(TextPort.Text))
                         TextPort.Text = "2019";
                     CheckAutoStart.Checked = bool.Parse(head?.SelectSingleNode("AutoStart")?.InnerText ?? "false");
 
-                    string language = head?.SelectSingleNode("Language")?.InnerText;
-                    if (string.IsNullOrEmpty(language) || !Enum.TryParse(language, out I18n.CurrentLanguage))
+                    var language = head?.SelectSingleNode("Language")?.InnerText;
+                    if (string.IsNullOrEmpty(language) || !Enum.TryParse(language, out Language currentLang))
                     {
-                        I18n.CurrentLanguage = CultureInfo.CurrentCulture.TwoLetterISOLanguageName == "zh" ? I18n.Language.CN : I18n.Language.EN;
+                        currentLang = CultureInfo.CurrentCulture.TwoLetterISOLanguageName == "zh" ? Language.CN : Language.EN;
                     }
-                    if (I18n.CurrentLanguage == I18n.Language.EN)
+                    LocalizationManager.CurrentLanguage = currentLang;
+                    if (currentLang == Language.EN)
                     {
                         radioButtonEN.Checked = true;
                     }
@@ -162,9 +162,9 @@ namespace PostNamazu
                 }
                 catch (Exception ex)
                 {
-                    Log(I18n.Translate("PostNamazuUi/CfgLoadException", "配置文件载入异常：\n{0}", ex.ToString()));
+                    Log(L.Get("PostNamazu/cfgLoadException", ex.ToString()));
                     File.Delete(SettingsFile);
-                    Log(I18n.Translate("PostNamazuUi/CfgReset", "已重置配置文件。"));
+                    Log(L.Get("PostNamazu/cfgReset"));
                 }
 
             }
@@ -172,13 +172,13 @@ namespace PostNamazu
 
         public void SaveSettings()
         {
-            FileStream fs = new FileStream(SettingsFile, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
-            XmlTextWriter xWriter = new XmlTextWriter(fs, Encoding.UTF8) { Formatting = Formatting.Indented, Indentation = 1, IndentChar = '\t' };
+            var fs = new FileStream(SettingsFile, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
+            var xWriter = new XmlTextWriter(fs, Encoding.UTF8) { Formatting = Formatting.Indented, Indentation = 1, IndentChar = '\t' };
             xWriter.WriteStartDocument(true);
             xWriter.WriteStartElement("Config");    // <Config>
             xWriter.WriteElementString("Port", TextPort.Text);
             xWriter.WriteElementString("AutoStart", CheckAutoStart.Checked.ToString());
-            xWriter.WriteElementString("Language", I18n.CurrentLanguage.ToString());
+            xWriter.WriteElementString("Language", LocalizationManager.CurrentLanguage.ToString());
             xWriter.WriteStartElement("Actions");    // <Actions>
             foreach (var action in ActionEnabled)
                 xWriter.WriteElementString(action.Key,action.Value.ToString());
@@ -193,11 +193,11 @@ namespace PostNamazu
         {
             if (radioButtonEN.Checked)
             {
-                I18n.CurrentLanguage = I18n.Language.EN;
+                LocalizationManager.CurrentLanguage = Language.EN;
             }
             else if (radioButtonCN.Checked)
             {
-                I18n.CurrentLanguage = I18n.Language.CN;
+                LocalizationManager.CurrentLanguage = Language.CN;
             }
             TranslateUi();
         }
@@ -232,18 +232,20 @@ namespace PostNamazu
 
         internal void TranslateUi()
         {
-            this.SuspendLayout();
-            if (Parent != null) Parent.Text = I18n.Translate("PostNamazu", "鲶鱼精邮差");
+            SuspendLayout();
+            if (Parent != null) Parent.Text = L.Get("PostNamazu/title");
             RecursiveTranslateControls(this);
-            this.ResumeLayout(true);
+            ResumeLayout(true);
         }
 
         private void RecursiveTranslateControls(Control control)
         {
             if (!string.IsNullOrEmpty(control.Text))
             {
-                string text = I18n.TranslateUi(control.Name);
-                if (text != null)
+                // 尝试通过控件名称查找翻译
+                var key = $"PostNamazu/{control.Name}";
+                var text = L.Get(key);
+                if (text != $"[{key}]") // 如果找到了翻译（不是返回的默认值）
                 {
                     control.Text = text;
                 }
@@ -254,32 +256,32 @@ namespace PostNamazu
             }
         }
 
-        public void btnWaymarksImport_Click(object sender, EventArgs e)
+        public void BtnWaymarksImport_Click(object sender, EventArgs e)
         {
-            ImportWaymarksForm importForm = new ImportWaymarksForm();
+            var importForm = new ImportWaymarksForm();
             importForm.Show(this);
             importForm.BringToFront();
         }
 
-        public void btnWaymarksExport_Click(object sender, EventArgs e)
+        public void BtnWaymarksExport_Click(object sender, EventArgs e)
         {
             string data;
             try
             {
                 data = GetCurrentWaymarksString();
                 Clipboard.SetText(data);
-                MessageBox.Show(I18n.Translate("PostNamazuUi/ExportWaymarks", "已将标点文本存入剪贴板。"), "PostNamazu", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(L.Get("PostNamazu/exportWaymarks"), "PostNamazu", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show(I18n.Translate("PostNamazuUi/ExportWaymarksFail", "读取现有标点失败：\n{0}", ex.ToString()), "PostNamazu", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(L.Get("PostNamazu/exportWaymarksFail", ex.ToString()), "PostNamazu", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
         }
 
         public static string GetCurrentWaymarksString()
         {
-            WayMarks waymarks = PostNamazu.Plugin.GetModuleInstance<WayMark>().ReadCurrentWaymarks();
+            var waymarks = PostNamazu.Plugin.GetModuleInstance<WayMark>().ReadCurrentWaymarks();
             return waymarks.ToJsonString();
         }
 

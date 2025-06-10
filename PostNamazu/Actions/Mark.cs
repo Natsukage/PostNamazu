@@ -1,11 +1,10 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Linq;
-using System.Threading;
 using PostNamazu.Attributes;
 using PostNamazu.Models;
-using System.Collections.Generic;
-using static PostNamazu.Common.I18n;
+using PostNamazu.Common.Localization;
+#pragma warning disable CS0649 // 从未对字段赋值，字段将一直保持其默认值
 
 namespace PostNamazu.Actions
 {
@@ -14,6 +13,17 @@ namespace PostNamazu.Actions
         private IntPtr MarkingFunc;
         private IntPtr LocalMarkingFunc;
         private IntPtr MarkingController;
+
+        // 本地化字符串定义
+        [LocalizationProvider("Mark")]
+        private static class Localizations
+        {
+            [Localized("Could not find actor: {0}", "未能找到实体： {0}")]
+            public static readonly string ActorNotFound;
+
+            [Localized("Invalid format for actor marker", "实体标点格式错误")]
+            public static readonly string Exception;
+        }
 
         public override void GetOffsets() {
             base.GetOffsets();
@@ -37,7 +47,7 @@ namespace PostNamazu.Actions
             CheckBeforeExecution(command);
             var mark = JsonConvert.DeserializeObject<Marking>(command);
             if (mark?.MarkType == null) {
-                throw new Exception(GetLocalizedString("Exception"));
+                throw new Exception(L.Get("Mark/Exception"));
             }
             var actor = GetActor(mark.ActorID, mark.Name);
             MarkActor(actor, mark.MarkType.Value, mark.Log, mark.LocalOnly);
@@ -56,7 +66,7 @@ namespace PostNamazu.Actions
             var combatants = FFXIV_ACT_Plugin.DataRepository.GetCombatantList().Where(i => !string.IsNullOrEmpty(i.Name) && i.ID != 0xE0000000);
             return combatants.FirstOrDefault(i => i.ID == id) 
                 ?? combatants.FirstOrDefault(i => i.Name == name)
-                ?? throw new Exception(GetLocalizedString("ActorNotFound", id?.ToString("X8") ?? name ?? "(null)"));
+                ?? throw new Exception(L.Get("Mark/ActorNotFound", id?.ToString("X8") ?? name ?? "(null)"));
             //PluginUI.Log($"BNpcID={combatant.BNpcNameID},ActorID={combatant.ID:X},markingType={markingType}");
         }
 
@@ -73,19 +83,5 @@ namespace PostNamazu.Actions
                     Memory.CallInjected64<char>(MarkingFunc, MarkingController, markingType - 1, actor.ID); //模仿游戏函数，先执行本地再公开
             });
         }
-
-        protected override Dictionary<string, Dictionary<Language, string>> LocalizedStrings { get; } = new()
-        {
-            ["ActorNotFound"] = new()
-            {
-                [Language.EN] = "Could not find actor: {0}",
-                [Language.CN] = "未能找到实体： {0}"
-            },
-            ["Exception"] = new()
-            {
-                [Language.EN] = "Invalid format for actor marker",
-                [Language.CN] = "实体标点格式错误"
-            },
-        };
     }
 }

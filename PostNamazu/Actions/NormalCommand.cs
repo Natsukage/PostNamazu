@@ -1,10 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text;
-using System.Threading;
 using PostNamazu.Attributes;
-using static PostNamazu.Common.I18n;
+using PostNamazu.Common;
+using PostNamazu.Common.Localization;
 using GreyMagic;
+#pragma warning disable CS0649 // 从未对字段赋值，字段将一直保持其默认值
 
 namespace PostNamazu.Actions
 {
@@ -13,6 +13,15 @@ namespace PostNamazu.Actions
         private IntPtr ProcessChatBoxPtr;
         private IntPtr GetUiModulePtr;
 
+        // 本地化字符串定义
+        [LocalizationProvider("NormalCommand")]
+        private static class Localizations
+        {
+            [Localized("To avoid sending wrong text to public channels, only commands starting with \"/\" are permitted. Add the prefix \"{0}\" to post to the current channel.",
+                       "为防止误操作导致错误文本发送至公共频道，仅允许以 \"/\" 开头的指令。如需发送至当前频道，请加前缀 \"{0}\"。")]
+            public static readonly string NoChannelError;
+        }
+
         public override void GetOffsets()
         {
             base.GetOffsets();
@@ -20,16 +29,15 @@ namespace PostNamazu.Actions
             GetUiModulePtr = SigScanner.ScanText("E8 * * * * 80 7B 1D 01", nameof(GetUiModulePtr));
         }
 
-        const string CurrentChannelPrefix = "/current ";
         void CheckChannel(ref string command)
         {
             if (!command.StartsWith("/"))
             {
-                throw new ArgumentException(GetLocalizedString("NoChannelError"));
+                throw new ArgumentException(L.Get("NormalCommand/NoChannelError", Constants.CurrentChannelPrefix));
             }
-            if (command.StartsWith(CurrentChannelPrefix))
+            if (command.StartsWith(Constants.CurrentChannelPrefix))
             {
-                command = command.Substring(CurrentChannelPrefix.Length);
+                command = command.Substring(Constants.CurrentChannelPrefix.Length);
             }
         }
 
@@ -47,7 +55,8 @@ namespace PostNamazu.Actions
             ExecuteWithLock(() =>
             {
                 var array = Encoding.UTF8.GetBytes(command);
-                using AllocatedMemory allocatedMemory = Memory.CreateAllocatedMemory(400), allocatedMemory2 = Memory.CreateAllocatedMemory(array.Length + 30);
+                using AllocatedMemory allocatedMemory = Memory.CreateAllocatedMemory(Constants.MemoryAllocationSize), 
+                      allocatedMemory2 = Memory.CreateAllocatedMemory(array.Length + Constants.CommandBufferSize);
                 allocatedMemory2.AllocateOfChunk("cmd", array.Length);
                 allocatedMemory2.WriteBytes("cmd", array);
                 allocatedMemory.AllocateOfChunk<IntPtr>("cmdAddress");
@@ -62,14 +71,5 @@ namespace PostNamazu.Actions
                 _ = Memory.CallInjected64<int>(ProcessChatBoxPtr, uiModulePtr, allocatedMemory.Address, IntPtr.Zero, (byte)0);
             });
         }
-
-        protected override Dictionary<string, Dictionary<Language, string>> LocalizedStrings { get; } = new()
-        {
-            ["NoChannelError"] = new()
-            {
-                [Language.EN] = $"To avoid sending wrong text to public channels, only commands starting with \"/\" are permitted. Add the prefix \"{CurrentChannelPrefix}\" to post to the current channel.",
-                [Language.CN] = $"为防止误操作导致错误文本发送至公共频道，仅允许以 \"/\" 开头的指令。如需发送至当前频道，请加前缀 \"{CurrentChannelPrefix}\"。"
-            },
-        };
     }
 }

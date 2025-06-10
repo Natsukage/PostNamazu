@@ -1,14 +1,12 @@
-﻿﻿using Advanced_Combat_Tracker;
+﻿using Advanced_Combat_Tracker;
 using Newtonsoft.Json;
 using PostNamazu.Attributes;
-using PostNamazu.Common;
+using PostNamazu.Common.Localization;
 using PostNamazu.Models;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
-using static PostNamazu.Common.I18n;
+#pragma warning disable CS0649 // 从未对字段赋值，字段将一直保持其默认值
 
 namespace PostNamazu.Actions
 {
@@ -18,6 +16,44 @@ namespace PostNamazu.Actions
         public IntPtr Waymarks;
         public IntPtr MarkingController;
         public IntPtr ExecuteCommandPtr;
+
+        // 本地化字符串定义
+        [LocalizationProvider("WayMark")]
+        private static class Localizations
+        {
+            [Localized("Waymarks: cache restored", "场地标点: 已本地清除所有标点。")]
+            public static readonly string Clear;
+
+            [Localized("Waymarks: cache restored", "场地标点: 已公开清除所有标点。")]
+            public static readonly string ClearPublic;
+
+            [Localized("Waymarks: Failed to obtain InCombat status from OverlayPlugin: \n{0}", 
+                       "从 OverlayPlugin 获取战斗状态失败：\n{0}")]
+            public static readonly string GetInCombatFail;
+
+            [Localized("Waymarks: Currently in combat, unable to place public waymarks.", 
+                       "场地标点: 当前处于战斗状态，无法公开标点。")]
+            public static readonly string InCombat;
+
+            [Localized("Waymarks: cache restored", "场地标点: 已本地恢复暂存的标点。")]
+            public static readonly string Load;
+
+            [Localized("Waymarks: Local mark: \n{0}", "场地标点: 本地标记 \n{0}")]
+            public static readonly string Local;
+
+            [Localized("Waymarks: Public mark: \n{0}", "场地标点: 公开标记 \n{0}")]
+            public static readonly string Public;
+
+            [Localized("Waymarks: cache cleared", "场地标点: 已清除暂存的标点。")]
+            public static readonly string Reset;
+
+            [Localized("Waymarks: current waymarks saved to cache", "场地标点: 已暂存当前标点。")]
+            public static readonly string Save;
+
+            [Localized("Waymarks: Exception occurred when saving waymarks: \n{0}", 
+                       "场地标点: 保存标记错误：\n{0}")]
+            public static readonly string SaveException;
+        }
 
         public override void GetOffsets()
         {
@@ -69,16 +105,16 @@ namespace PostNamazu.Actions
                     break;
                 case "reset":
                     tempMarks = null;
-                    PluginUI.Log(GetLocalizedString("Reset"));
+                    PluginUI.Log(L.Get("WayMark/Reset"));
                     break;
                 case "clear":
                     DoWaymarks(new WayMarks { A = new Waymark(), B = new Waymark(), C = new Waymark(), D = new Waymark(), One = new Waymark(), Two = new Waymark(), Three = new Waymark(), Four = new Waymark() });
-                    PluginUI.Log(GetLocalizedString("Clear"));
+                    PluginUI.Log(L.Get("WayMark/Clear"));
                     break;
                 case "public":
                     if (GetInCombat() == true)
                     {
-                        Log(GetLocalizedString("InCombat"));
+                        Log(L.Get("WayMark/InCombat"));
                         return;
                     }
                     Public(ReadCurrentWaymarks());
@@ -93,7 +129,7 @@ namespace PostNamazu.Actions
                     {
                         if (GetInCombat() == true)
                         {
-                            if (waymarks.Log) Log(GetLocalizedString("InCombat"));
+                            if (waymarks.Log) Log(L.Get("WayMark/InCombat"));
                             return;
                         }
                         Public(waymarks);
@@ -101,7 +137,7 @@ namespace PostNamazu.Actions
                     if (waymarks.Log)
                     {
                         WayMarks.SetWaymarkIds(waymarks);
-                        Log(GetLocalizedString(waymarks.LocalOnly ? "Local" : "Public", waymarks.ToString()));
+                        Log(L.Get(waymarks.LocalOnly ? "WayMark/Local" : "WayMark/Public", waymarks.ToString()));
                     }
                     break;
             }
@@ -116,10 +152,10 @@ namespace PostNamazu.Actions
 
             try {
                 tempMarks = ReadCurrentWaymarks();
-                PluginUI.Log(GetLocalizedString("Save"));
+                PluginUI.Log(L.Get("WayMark/Save"));
             }
             catch (Exception ex) {
-                throw new Exception(GetLocalizedString("SaveException", ex.Message));
+                throw new Exception(L.Get("WayMark/SaveException", ex.Message));
             }
 
         }
@@ -127,7 +163,20 @@ namespace PostNamazu.Actions
         public WayMarks ReadCurrentWaymarks()
         {
             CheckBeforeExecution();
-            Waymark ReadWaymark(IntPtr addr, WaymarkID id) => new()
+            var waymarks = new WayMarks
+            {
+                A = ReadWaymark(Waymarks + 0x00, WaymarkID.A),
+                B = ReadWaymark(Waymarks + 0x20, WaymarkID.B),
+                C = ReadWaymark(Waymarks + 0x40, WaymarkID.C),
+                D = ReadWaymark(Waymarks + 0x60, WaymarkID.D),
+                One = ReadWaymark(Waymarks + 0x80, WaymarkID.One),
+                Two = ReadWaymark(Waymarks + 0xA0, WaymarkID.Two),
+                Three = ReadWaymark(Waymarks + 0xC0, WaymarkID.Three),
+                Four = ReadWaymark(Waymarks + 0xE0, WaymarkID.Four)
+            };
+            return waymarks;
+
+            static Waymark ReadWaymark(IntPtr addr, WaymarkID id) => new()
             {
                 X = Memory.Read<float>(addr),
                 Y = Memory.Read<float>(addr + 0x4),
@@ -135,16 +184,6 @@ namespace PostNamazu.Actions
                 Active = Memory.Read<byte>(addr + 0x1C) == 1,
                 ID = id
             };
-            var waymarks = new WayMarks();
-            waymarks.A = ReadWaymark(Waymarks + 0x00, WaymarkID.A);
-            waymarks.B = ReadWaymark(Waymarks + 0x20, WaymarkID.B);
-            waymarks.C = ReadWaymark(Waymarks + 0x40, WaymarkID.C);
-            waymarks.D = ReadWaymark(Waymarks + 0x60, WaymarkID.D);
-            waymarks.One = ReadWaymark(Waymarks + 0x80, WaymarkID.One);
-            waymarks.Two = ReadWaymark(Waymarks + 0xA0, WaymarkID.Two);
-            waymarks.Three = ReadWaymark(Waymarks + 0xC0, WaymarkID.Three);
-            waymarks.Four = ReadWaymark(Waymarks + 0xE0, WaymarkID.Four);
-            return waymarks;
         }
 
         /// <summary>
@@ -155,7 +194,7 @@ namespace PostNamazu.Actions
             if (tempMarks == null)
                 return;
             DoWaymarks(tempMarks);
-            PluginUI.Log(GetLocalizedString("Load"));
+            PluginUI.Log(L.Get("WayMark/Load"));
         }
 
         /// <summary>
@@ -207,12 +246,12 @@ namespace PostNamazu.Actions
                     ExecuteCommand(313);
                     if (waymarks == null)
                     {
-                        Log(GetLocalizedString("ClearPublic"));
+                        Log(L.Get("WayMark/ClearPublic"));
                     }
                 }
                 else
                 {
-                    int idx = -1;
+                    var idx = -1;
                     foreach (var waymark in waymarks)
                     {
                         idx++;
@@ -243,74 +282,20 @@ namespace PostNamazu.Actions
                 .FirstOrDefault(x => x.pluginObj?.GetType().ToString() == "RainbowMage.OverlayPlugin.PluginLoader")?.pluginObj;
             try
             {
-                object pluginMain = op.GetType().GetField("pluginMain", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(op);
-                object container = pluginMain.GetType().GetField("_container", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(pluginMain);
-                Type inCombatMemoryType = Type.GetType("RainbowMage.OverlayPlugin.MemoryProcessors.InCombat.IInCombatMemory, OverlayPlugin.Core");
-                MethodInfo resolveMethodGeneric = container.GetType().GetMethod("Resolve", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
-                MethodInfo resolveMethodSpecific = resolveMethodGeneric.MakeGenericMethod(inCombatMemoryType);
-                object inCombatMemoryManager = resolveMethodSpecific.Invoke(container, null);
-                MethodInfo getInCombatMethod = inCombatMemoryManager.GetType().GetMethod("GetInCombat");
+                var pluginMain = op.GetType().GetField("pluginMain", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(op);
+                var container = pluginMain.GetType().GetField("_container", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(pluginMain);
+                var inCombatMemoryType = Type.GetType("RainbowMage.OverlayPlugin.MemoryProcessors.InCombat.IInCombatMemory, OverlayPlugin.Core");
+                var resolveMethodGeneric = container.GetType().GetMethod("Resolve", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
+                var resolveMethodSpecific = resolveMethodGeneric.MakeGenericMethod(inCombatMemoryType);
+                var inCombatMemoryManager = resolveMethodSpecific.Invoke(container, null);
+                var getInCombatMethod = inCombatMemoryManager.GetType().GetMethod("GetInCombat");
                 return (bool)getInCombatMethod.Invoke(inCombatMemoryManager, null);
             }
             catch (Exception ex)
             {
-                Log(GetLocalizedString("GetInCombatFail", ex.ToString()));
+                Log(L.Get("WayMark/GetInCombatFail", ex.ToString()));
                 return false;
             }
         }
-
-        protected override Dictionary<string, Dictionary<Language, string>> LocalizedStrings { get; } = new()
-        {
-            ["Clear"] = new()            
-            {
-                [Language.EN] = "Waymarks: cache restored",
-                [Language.CN] = "场地标点: 已本地清除所有标点。"
-            },
-            ["ClearPublic"] = new()
-            {
-                [Language.EN] = "Waymarks: cache restored",
-                [Language.CN] = "场地标点: 已公开清除所有标点。"
-            },
-            ["GetInCombatFail"] = new()
-            {
-                [Language.EN] = "Waymarks: Failed to obtain InCombat status from OverlayPlugin: \n{0}",
-                [Language.CN] = "从 OverlayPlugin 获取战斗状态失败：\n{0}"
-            },
-            ["InCombat"] = new()
-            {
-                [Language.EN] = "Waymarks: Currently in combat, unable to place public waymarks.",
-                [Language.CN] = "场地标点: 当前处于战斗状态，无法公开标点。"
-            },
-            ["Load"] = new()
-            {
-                [Language.EN] = "Waymarks: cache restored",
-                [Language.CN] = "场地标点: 已本地恢复暂存的标点。"
-            },
-            ["Local"] = new()
-            {
-                [Language.EN] = "Waymarks: Local mark: \n{0}",
-                [Language.CN] = "场地标点: 本地标记 \n{0}"
-            },
-            ["Public"] = new()
-            {
-                [Language.EN] = "Waymarks: Public mark: \n{0}",
-                [Language.CN] = "场地标点: 公开标记 \n{0}"
-            },
-            ["Reset"] = new()
-            {
-                [Language.EN] = "Waymarks: cache cleared",
-                [Language.CN] = "场地标点: 已清除暂存的标点。"
-            },
-            ["Save"] = new()
-            {
-                [Language.EN] = "Waymarks: current waymarks saved to cache",
-                [Language.CN] = "场地标点: 已暂存当前标点。"
-            },
-            ["SaveException"] = new()
-            {
-                [Language.EN] = "Waymarks: Exception occurred when saving waymarks: \n{0}",
-                [Language.CN] = "场地标点: 保存标记错误：\n{0}"
-            },
-        };
     }
 }

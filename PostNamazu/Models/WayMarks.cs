@@ -36,7 +36,7 @@ namespace PostNamazu.Models
 
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
 
             if (Name != null) sb.Append($"Name={Name}; \n");
             if (MapID != 0) sb.Append($"MapId={MapID}; \n");

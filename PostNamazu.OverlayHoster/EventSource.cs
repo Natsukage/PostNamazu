@@ -22,8 +22,8 @@ namespace PostNamazu.OverlayHoster
         }
         private JToken DoAction(JObject jo)
         {
-            string command = jo["c"]?.Value<string>() ?? "null";
-            string payload = jo["p"]?.Value<string>() ?? "";
+            var command = jo["c"]?.Value<string>() ?? "null";
+            var payload = jo["p"]?.Value<string>() ?? "";
             if (PostNamazuDelegate == null) 
                 throw new ArgumentNullException("没有活动的鲶鱼精邮差插件本体");
             PostNamazuDelegate(command, payload);

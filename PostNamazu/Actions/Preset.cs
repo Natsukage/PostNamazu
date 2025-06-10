@@ -5,7 +5,8 @@ using PostNamazu.Models;
 using Newtonsoft.Json;
 using PostNamazu.Common;
 using System.Text.RegularExpressions;
-using static PostNamazu.Common.I18n;
+using PostNamazu.Common.Localization;
+#pragma warning disable CS0649 // 从未对字段赋值，字段将一直保持其默认值
 
 namespace PostNamazu.Actions
 {
@@ -14,6 +15,14 @@ namespace PostNamazu.Actions
         private IntPtr UIModulePtr;
         private Int32 WayMarkSlotOffset;
         public IntPtr MapIDPtr;
+
+        // 本地化字符串定义
+        [LocalizationProvider("Preset")]
+        private static class Localizations
+        {
+            [Localized("Preset and current map ID are both invalid, loading preset failed.", "预设与当前的地图 ID 均不合法，加载预设失败。")]
+            public static readonly string MapIdIllegal;
+        }
 
         public override void GetOffsets()
         {
@@ -73,22 +82,22 @@ namespace PostNamazu.Actions
                 waymarks.MapID = SigScanner.Read<ushort>(MapIDPtr);
             if (waymarks.MapID == 0)
             {
-                Log(GetLocalizedString("MapIdIllegal"));
+                Log(L.Get("Preset/MapIdIllegal"));
                 return;
             }
             GetWayMarkSlotOffset();
             
             IntPtr SlotOffset;
 
-            string pattern = @"^Slot0?(\d{1,2})$";
-            Match match = Regex.Match(waymarks.Name, pattern,RegexOptions.IgnoreCase);
+            var pattern = @"^Slot0?(\d{1,2})$";
+            var match = Regex.Match(waymarks.Name, pattern,RegexOptions.IgnoreCase);
 
-            if (match.Success && uint.TryParse(match.Groups[1].Value, out uint slotNum) && slotNum is > 0 and <= 30)
+            if (match.Success && uint.TryParse(match.Groups[1].Value, out var slotNum) && slotNum is > 0 and <= 30)
                 SlotOffset = GetWaymarkDataPointerForSlot(slotNum);
             else
                 SlotOffset = GetWaymarkDataPointerForSlot(1);
 
-            byte[] importdata = ConstructGamePreset(waymarks);
+            var importdata = ConstructGamePreset(waymarks);
             Memory.WriteBytes(SlotOffset, importdata);
             
         }
@@ -121,11 +130,11 @@ namespace PostNamazu.Actions
         public byte[] ConstructGamePreset(WayMarks waymarks)
         {
             //	List is easy because we can just push data on to it.
-            List<byte> byteData = new List<byte>();
+            var byteData = new List<byte>();
             byte activeMask = 0x00;
             foreach (var twaymark in waymarks)
             {
-                Waymark waymark = twaymark ?? new Waymark();
+                var waymark = twaymark ?? new Waymark();
                 byteData.AddRange(BitConverter.GetBytes(waymark.Active ? (Int32)(waymark.X * 1000.0) : 0));
                 byteData.AddRange(BitConverter.GetBytes(waymark.Active ? (Int32)(waymark.Y * 1000.0) : 0));
                 byteData.AddRange(BitConverter.GetBytes(waymark.Active ? (Int32)(waymark.Z * 1000.0) : 0));
@@ -142,7 +151,7 @@ namespace PostNamazu.Actions
             byteData.AddRange(BitConverter.GetBytes(waymarks.MapID));
 
             //	Time last modified.
-            DateTimeOffset Time = new DateTimeOffset(DateTimeOffset.Now.UtcDateTime);
+            var Time = new DateTimeOffset(DateTimeOffset.Now.UtcDateTime);
             byteData.AddRange(BitConverter.GetBytes((Int32)Time.ToUnixTimeSeconds()));
 
             //	Shouldn't ever come up with the wrong length, but just in case...
@@ -154,13 +163,5 @@ namespace PostNamazu.Actions
             //	Send it out.
             return byteData.ToArray();
         }
-        protected override Dictionary<string, Dictionary<Language, string>> LocalizedStrings { get; } = new()
-        {
-            ["MapIdIllegal"] = new()
-            {
-                [Language.EN] = "Preset and current map ID are both invalid, loading preset failed.",
-                [Language.CN] = "预设与当前的地图 ID 均不合法，加载预设失败。"
-            },
-        };
     }
 }

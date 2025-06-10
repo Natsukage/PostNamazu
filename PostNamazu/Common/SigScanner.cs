@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
+using PostNamazu.Common.Localization;
 
 namespace PostNamazu.Common
 {
@@ -23,7 +24,7 @@ namespace PostNamazu.Common
         /// <summary>
         /// The base address of the .text section search area.
         /// </summary>
-        public IntPtr TextSectionBase => new IntPtr(_baseAddress.ToInt64() + TextSectionOffset);
+        public IntPtr TextSectionBase => new(_baseAddress.ToInt64() + TextSectionOffset);
         /// <summary>
         /// The offset of the .text section from the base of the module.
         /// </summary>
@@ -36,7 +37,7 @@ namespace PostNamazu.Common
         /// <summary>
         /// The base address of the .data section search area.
         /// </summary>
-        public IntPtr DataSectionBase => new IntPtr(_baseAddress.ToInt64() + DataSectionOffset);
+        public IntPtr DataSectionBase => new(_baseAddress.ToInt64() + DataSectionOffset);
         /// <summary>
         /// The offset of the .data section from the base of the module.
         /// </summary>
@@ -116,13 +117,9 @@ namespace PostNamazu.Common
             public UInt16[] e_res2;    // Reserved words
             public Int32 e_lfanew;      // File address of new exe header
 
-            private string _e_magic {
-                get { return new string(e_magic); }
-            }
+            private string EMagic => new(e_magic);
 
-            public bool isValid {
-                get { return _e_magic == "MZ"; }
-            }
+            public bool IsValid => EMagic == "MZ";
         }
 
 
@@ -151,9 +148,7 @@ namespace PostNamazu.Common
             [FieldOffset(24)]
             public IMAGE_OPTIONAL_HEADER64 OptionalHeader;
 
-            public bool isValid {
-                get { return Signature == 0x00004550 && OptionalHeader.Magic == MagicType.IMAGE_NT_OPTIONAL_HDR64_MAGIC; }
-            }
+            public bool IsValid => Signature == 0x00004550 && OptionalHeader.Magic == MagicType.IMAGE_NT_OPTIONAL_HDR64_MAGIC;
         }
 
         [StructLayout(LayoutKind.Explicit)]
@@ -353,10 +348,10 @@ namespace PostNamazu.Common
         public T[] Read<T>(IntPtr address, int count) where T : struct {
             return _memhelper.Read<T>(address, count);
         }
-        public Byte ReadByte(IntPtr address, int offset = 0) => _memhelper.Read<Byte>(IntPtr.Add(address, offset));
-        public Int16 ReadInt16(IntPtr address, int offset = 0) => _memhelper.Read<Int16>(IntPtr.Add(address, offset));
-        public Int32 ReadInt32(IntPtr address, int offset = 0) => _memhelper.Read<Int32>(IntPtr.Add(address, offset));
-        public Int64 ReadInt64(IntPtr address, int offset = 0) => _memhelper.Read<Int64>(IntPtr.Add(address, offset));
+        public byte ReadByte(IntPtr address, int offset = 0) => _memhelper.Read<byte>(IntPtr.Add(address, offset));
+        public short ReadInt16(IntPtr address, int offset = 0) => _memhelper.Read<short>(IntPtr.Add(address, offset));
+        public int ReadInt32(IntPtr address, int offset = 0) => _memhelper.Read<int>(IntPtr.Add(address, offset));
+        public long ReadInt64(IntPtr address, int offset = 0) => _memhelper.Read<long>(IntPtr.Add(address, offset));
         public IntPtr ReadIntPtr(IntPtr address, int offset = 0) => _memhelper.Read<IntPtr>(IntPtr.Add(address, offset));
 
         public SigScanner(Process process) {
@@ -366,7 +361,7 @@ namespace PostNamazu.Common
             _baseAddress = _memhelper.BaseAddress;
 
             var dosHeaders = _memhelper.Read<IMAGE_DOS_HEADER>(_baseAddress);
-            if (dosHeaders.isValid) {
+            if (dosHeaders.IsValid) {
                 var ntHeaders = _memhelper.Read<IMAGE_NT_HEADERS64>(_baseAddress + dosHeaders.e_lfanew);
                 SizeOfCode = ntHeaders.OptionalHeader.SizeOfCode;
                 CodeBase = ntHeaders.OptionalHeader.BaseOfCode;
@@ -395,30 +390,26 @@ namespace PostNamazu.Common
         /// </summary>
         public IntPtr ScanText(string pattern, string name = null)
         {
-            (var bytes, int? relAddressingOffset) = HexToBytes(pattern);
+            (var bytes, var relAddressingOffset) = HexToBytes(pattern);
             var results = FindPattern(bytes);
             if (results.Count > 1)
             {
-                throw new ArgumentException(I18n.Translate(
-                    "SigScanner/ResultMultiple", 
-                    "扫描{0}时匹配到 {1} 处内存签名，无法确定唯一位置。", 
+                throw new ArgumentException(L.Get("PostNamazu/resultMultiple", 
                     name == null ? "" : $" {name} ",
                     results.Count
                 ));
             }
             if (results.Count == 0)
             {
-                throw new ArgumentException(I18n.Translate(
-                    "SigScanner/ResultNone", 
-                    "扫描{0}时未匹配到所需的内存签名。", 
+                throw new ArgumentException(L.Get("PostNamazu/resultNone", 
                     name == null ? "" : $" {name} "
                 ));
             }
 
-            IntPtr patternPtr = results[0];
+            var patternPtr = results[0];
             if (relAddressingOffset.HasValue) // 指定相对寻址
             {
-                IntPtr starPtr = patternPtr + relAddressingOffset.Value; // 第一个 * 的地址
+                var starPtr = patternPtr + relAddressingOffset.Value; // 第一个 * 的地址
                 patternPtr = starPtr + 4 + ReadInt32(starPtr);
             }
 #if DEBUG
@@ -430,7 +421,7 @@ namespace PostNamazu.Common
         public List<IntPtr> FindPattern(List<int> pattern)
         {
             var results = Find(pattern);
-            for (int i = 0; i < results.Count; i++)
+            for (var i = 0; i < results.Count; i++)
             {
                 results[i] = _baseAddress + (int)results[i];
             }
@@ -439,8 +430,8 @@ namespace PostNamazu.Common
 
         List<IntPtr> Find(List<int> pattern) {
 
-            List<IntPtr> ret = new List<IntPtr>();
-            uint plen = (uint)pattern.Count;
+            var ret = new List<IntPtr>();
+            var plen = (uint)pattern.Count;
             var dataLength = _dataLength - plen;
             for (var i = CodeBase; i < dataLength; i++) {
                 if (ByteMatch(_data, (int)i, pattern))
@@ -462,7 +453,7 @@ namespace PostNamazu.Common
 
         (List<int>, int?) HexToBytes(string hex) 
         {
-            List<int> bytes = hex.Trim().Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(s =>
+            var bytes = hex.Trim().Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(s =>
             {
                 return s switch
                 {
@@ -481,8 +472,7 @@ namespace PostNamazu.Common
                     bytes.Skip(jump.Value).Take(4).Any(b => b != -2) ||   // these 4 digits must be *
                     bytes.Skip(jump.Value + 4).Any(b => b == -2))         // no more * after these 4 digits
                 {
-                    throw new FormatException(I18n.Translate("SigScanner/RelAddressingFormatError",
-                        "相对寻址 ({0}) 的内存签名必须含四个连续星号通配符（* * * *），且无额外星号。", hex));
+                    throw new FormatException(L.Get("PostNamazu/relAddressingFormatError", hex));
                 }
             }
             return (bytes, jump);
@@ -497,9 +487,9 @@ namespace PostNamazu.Common
         /// <param name="offset">The offset from function start of the instruction using the data.</param>
         /// <returns>An IntPtr to the static memory location.</returns>
         public IntPtr GetStaticAddressFromSig(string signature, int offset = 0, string name = null) {
-            IntPtr instrAddr = ScanText(signature, name);
+            var instrAddr = ScanText(signature, name);
             instrAddr = IntPtr.Add(instrAddr, offset);
-            long bAddr = (long)_baseAddress;
+            var bAddr = (long)_baseAddress;
             long num;
             do {
                 instrAddr = IntPtr.Add(instrAddr, 1);

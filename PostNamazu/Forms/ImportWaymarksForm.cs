@@ -1,11 +1,9 @@
 ﻿﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Text;
-using System.Windows.Forms;
+ using System.Drawing;
+ using System.Windows.Forms;
 using Newtonsoft.Json;
 using PostNamazu.Actions;
-using PostNamazu.Common;
+using PostNamazu.Common.Localization;
 using PostNamazu.Models;
 
 
@@ -36,12 +34,12 @@ namespace PostNamazu
 
         public ImportWaymarksForm()
         {
-            Text = I18n.TranslateUi("ImportWaymarksForm");
+            Text = L.Get("PostNamazu/importWaymarksForm");
             // Font = PostNamazu.Plugin.PluginUI.Font;              // System.Drawing.Font?
 
             mainPanel = new() { AutoSize = true, Dock = DockStyle.Fill, Padding = new Padding(20) };
             grpMain = new() { AutoSize = true, Dock = DockStyle.Fill, Padding = new Padding(20) };
-            grpMain.Text = I18n.TranslateUi("ImportWaymarksForm/grpMain");
+            grpMain.Text = L.Get("PostNamazu/importWaymarksFormGrpMain");
             mainTable = new() { AutoSize = true, Dock = DockStyle.Fill };
             TxtWaymarksData = new() { AutoSize = true, Dock = DockStyle.Fill, Multiline = true };
             try
@@ -88,7 +86,7 @@ namespace PostNamazu
                 }
             };
 
-            MinimumSize = new Size(PostNamazu.Plugin.PluginUI.Width / 2, PostNamazu.Plugin.PluginUI.Height / 2);
+            MinimumSize = new Size(PostNamazu.Plugin.PluginUi.Width / 2, PostNamazu.Plugin.PluginUi.Height / 2);
             StartPosition = FormStartPosition.CenterScreen;
         }
 
@@ -103,7 +101,9 @@ namespace PostNamazu
                 TabStop = false,
                 UseVisualStyleBackColor = true
             };
-            btn.Text = I18n.TranslateUi($"ImportWaymarksForm/{btn.Name}");
+            // 将按钮名转换为合适的本地化键名格式
+            var key = $"PostNamazu/importWaymarksForm{char.ToUpper(name[0])}{name.Substring(1)}";
+            btn.Text = L.Get(key);
             return btn;
         }
 
@@ -118,11 +118,11 @@ namespace PostNamazu
             {
                 var waymarks = JsonConvert.DeserializeObject<WayMarks>(TxtWaymarksData.Text);
                 WaymarkModule.DoWaymarks(waymarks);
-                MessageBox.Show(I18n.Translate("ImportWaymarksForm/Local", "已本地应用场地标点。"), "PostNamazu", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(L.Get("PostNamazu/importWaymarksFormLocal"), "PostNamazu", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show(I18n.Translate("ImportWaymarksForm/Fail", "应用标点失败：\n{0}", ex.ToString()), "PostNamazu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(L.Get("PostNamazu/importWaymarksFormFail", ex.ToString()), "PostNamazu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 
@@ -132,17 +132,17 @@ namespace PostNamazu
             {
                 if (WaymarkModule.GetInCombat() == true)
                 {
-                    MessageBox.Show(I18n.Translate("ImportWaymarksForm/InCombat", "当前处于战斗状态，无法公开标点。"), "PostNamazu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show(L.Get("PostNamazu/importWaymarksFormInCombat"), "PostNamazu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
                 var waymarks = JsonConvert.DeserializeObject<WayMarks>(TxtWaymarksData.Text);
                 WaymarkModule.DoWaymarks(waymarks);
                 WaymarkModule.Public(waymarks);
-                MessageBox.Show(I18n.Translate("ImportWaymarksForm/Public", "已公开标记场地标点。"), "PostNamazu", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(L.Get("PostNamazu/importWaymarksFormPublic"), "PostNamazu", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show(I18n.Translate("ImportWaymarksForm/Fail", "应用标点失败：\n{0}", ex.ToString()), "PostNamazu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(L.Get("PostNamazu/importWaymarksFormFail", ex.ToString()), "PostNamazu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
     }

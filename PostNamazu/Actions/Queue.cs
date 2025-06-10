@@ -4,13 +4,25 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using PostNamazu.Attributes;
-using static PostNamazu.Common.I18n;
+using PostNamazu.Common.Localization;
+#pragma warning disable CS0649 // 从未对字段赋值，字段将一直保持其默认值
 
 namespace PostNamazu.Actions
 {
     internal class Queue : NamazuModule
     {
         private static readonly List<string> QueuePending = new(); //注册qid的队列
+
+        // 本地化字符串定义
+        [LocalizationProvider("Queue")]
+        private static class Localizations
+        {
+            [Localized("Request to interrupt queue: {0}", "要求打断队列：{0}")]
+            public static readonly string Break;
+
+            [Localized("Queue {0} has been requested to interrupt", "队列 {0} 已被要求中断")]
+            public static readonly string Broken;
+        }
 
         [Command("queue")]
         [Command("DoQueueActions")]
@@ -25,23 +37,23 @@ namespace PostNamazu.Actions
                 {
                     await Task.Run(async () =>
                     {
-                        await Task.Delay(action.d);
+                        await Task.Delay(action.D);
 
                         if (qid != "" && !QueuePending.Contains(qid)) //注册了qid，但是对应qid已经被移除(stop)的场合
                             return; //打断
-                        switch (action.c.ToLower())
+                        switch (action.C.ToLower())
                         {
                             case "qid":
                                 if (qid != "")
                                     QueuePending.Remove(qid); //如果之前已经有旧的qid，则先移除旧的qid
-                                qid = action.p;
+                                qid = action.P;
                                 if (qid != "")
                                     QueuePending.Add(qid); //注册新的qid
                                 break;
                             default:
                                 try
                                 {
-                                    PostNamazu.DoAction(action.c, action.p);
+                                    PostNamazu.DoAction(action.C, action.P);
                                 }
                                 catch (Exception e)
                                 {
@@ -52,7 +64,7 @@ namespace PostNamazu.Actions
                     });
                     if (qid != "" && !QueuePending.Contains(qid))
                     {
-                        Log(GetLocalizedString("Broken", qid));
+                        Log(L.Get("Queue/Broken", qid));
                         break;
                     }
                 }
@@ -70,7 +82,7 @@ namespace PostNamazu.Actions
         [Command("BreakQueueActions")]
         public void BreakQueue(string command)
         {
-            Log(GetLocalizedString("Break",  command));
+            Log(L.Get("Queue/Break", command));
             switch (command.ToLower())
             {
                 case "all":
@@ -81,27 +93,15 @@ namespace PostNamazu.Actions
                     break;
             }
         }
-        protected override Dictionary<string, Dictionary<Language, string>> LocalizedStrings { get; } = new()
-        {
-            ["Break"] = new()
-            {
-                [Language.EN] = "Request to interrupt queue: {0}",
-                [Language.CN] = "要求打断队列：{0}"
-            },
-            ["Broken"] = new()
-            {
-                [Language.EN] = "Queue {0} has been requested to interrupt",
-                [Language.CN] = "队列 {0} 已被要求中断"
-            },
-        };
+
         public class QueueAction
         {
             [JsonProperty]
-            public string c { get; set; }
+            public string C { get; set; }
             [JsonProperty]
-            public string p { get; set; }
+            public string P { get; set; }
             [JsonProperty]
-            public int d { get; set; }
+            public int D { get; set; }
         }
     }
 }

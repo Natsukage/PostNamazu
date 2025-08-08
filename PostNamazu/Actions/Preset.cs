@@ -30,8 +30,10 @@ namespace PostNamazu.Actions
             var GetUiModulePtr = SigScanner.ScanText("E8 * * * * 80 7B 1D 01", "GetUiModulePtr");
             UIModulePtr = Memory.CallInjected64<IntPtr>(GetUiModulePtr, PostNamazu.FrameworkPtr);
 
-            var mapIDOffset = SigScanner.Read<UInt16>(SigScanner.ScanText("44 89 81 ? ? ? ? 0F B7 84 24", "mapIDOffset") + 3);
-            MapIDPtr = SigScanner.ScanText("48 8D 0D * * * * 0F B6 55 ?? 24", nameof(MapIDPtr)) + mapIDOffset;
+            // FFXIVClientStructs/FFXIV/Client/Game/GameMain.cs
+            var mapIDOffset = 0x40B8; // to-do：自动获取
+            // var mapIDOffset = SigScanner.Read<UInt16>(SigScanner.ScanText("44 89 81 ? ? ? ? 0F B7 84 24", "mapIDOffset") + 3);
+            MapIDPtr = SigScanner.ScanText("48 8D 0D * * * * 0F B6 55 ?? 24", "GameMainPtr") + mapIDOffset;
         }
 
         private void GetWayMarkSlotOffset()

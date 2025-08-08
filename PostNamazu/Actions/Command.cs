@@ -25,7 +25,16 @@ namespace PostNamazu.Actions
         public override void GetOffsets()
         {
             base.GetOffsets();
-            ProcessChatBoxPtr = SigScanner.ScanText("E8 * * * * FE 86 ? ? ? ? C7 86", nameof(ProcessChatBoxPtr));
+            // 函数本体：40 53 56 57 48 83 EC ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 44 24 ?? 48 8B 02 49 8B F0 ...
+            try // 7.3
+            {
+                ProcessChatBoxPtr = SigScanner.ScanText("FF 52 ? 4C 8B C7 48 8D 54 24 ? 48 8B C8 E8 * * * *", nameof(ProcessChatBoxPtr));
+            }
+            catch // 7.2
+            {
+                ProcessChatBoxPtr = SigScanner.ScanText("E8 * * * * FE 86 ? ? ? ? C7 86", nameof(ProcessChatBoxPtr));
+            }
+            
             GetUiModulePtr = SigScanner.ScanText("E8 * * * * 80 7B 1D 01", nameof(GetUiModulePtr));
         }
 

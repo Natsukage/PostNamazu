@@ -67,7 +67,7 @@ namespace PostNamazu
         {
             _state = value;
 #if DEBUG
-            PluginUI?.Log($"插件状态变更：{value}");
+            PluginUi?.Log($"插件状态变更：{value}");
 #endif
         }
 
@@ -129,7 +129,7 @@ namespace PostNamazu
         {
             foreach (var t in Assembly.GetExecutingAssembly().GetTypes().Where(t => t.IsSubclassOf(typeof(NamazuModule)) && !t.IsAbstract)) {
 #if DEBUG
-                PluginUI.Log($"Initalizing Module: {t.Name}");
+                PluginUi.Log($"Initalizing Module: {t.Name}");
 #endif
                 var module = (NamazuModule)Activator.CreateInstance(t);
                 Modules.Add(module);
@@ -141,7 +141,7 @@ namespace PostNamazu
                     {
                         SetAction(command.Command, handlerDelegate);
 #if DEBUG
-                        PluginUI.Log($"{action.Name}@{command.Command}");
+                        PluginUi.Log($"{action.Name}@{command.Command}");
 #endif
                     }
                     
@@ -267,19 +267,17 @@ namespace PostNamazu
         {
             PluginUi.Log(L.Get("PostNamazu/sigScanning"));
             SigScanner = new SigScanner(FFXIV);
-            try {
-                _entrancePtr = SigScanner.ScanText("4C 8B DC 56 41 57 48 81 EC ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 84 24 ? ? ? ? 48 83 B9 ? ? ? ? ? 4C 8B FA"); //7.0
-                _frameworkPtrPtr = IntPtr.Zero;
-                _isCN = null;
-                GetRegion();
-                return true;
+
+            try
+            {
+                _entrancePtr = SigScanner.ScanText("4C 8B DC 56 41 57 48 81 EC ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 84 24 ? ? ? ? 48 83 B9 ? ? ? ? ? 4C 8B FA"); // 7.0-7.2
             }
-            catch (ArgumentException) {
-                //PluginUI.Log(L.Get("PostNamazu/xivProcInjectFail"));
+            catch
+            {
+                _entrancePtr = IntPtr.Zero; // 7.3 临时修复，使用默认方式注入
             }
 
             try {
-                _entrancePtr = SigScanner.ScanText("E9 * * * * 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 48 83 B9");
                 _frameworkPtrPtr = IntPtr.Zero;
                 _isCN = null;
                 GetRegion();

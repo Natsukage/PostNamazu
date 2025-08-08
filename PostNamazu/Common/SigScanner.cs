@@ -378,44 +378,138 @@ namespace PostNamazu.Common
         }
 
         /// <summary>
-        /// 从内存中扫描指定的内存签名，返回唯一匹配的地址，否则报错。<br /><br />
-        /// 
-        /// ? 或 ?? 表示普通通配符，如：<br />
-        /// <c> 48 89 5C 24 ?? ... </c><br /><br />
-        /// 
-        /// * 或 ** 表示相对寻址通配符，如果使用，则仅能有连续四个，如：<br />
-        /// <c> 48 8D 0D * * * * 4C 8B 85 ... </c> <br />
-        /// <c> E8 * * * * 48 83 C4 ? E9 ? ? ? ? ... </c> <br />
-        /// 相对寻址计算方式为 * * * * 后的地址 + 这四字节对应的 int 偏移量。<br /><br />
+        /// 使用签名字符串扫描内存，并返回唯一匹配的位置指针，格式详见 <see cref="SigPatternInfo(string)"/> 。<br/><br/>
+        /// 如果需要手动指定相对偏移或指令长度，请使用重载版本 <see cref="ScanText(SigPatternInfo, string)"/>。<br/><br/>
         /// </summary>
+        /// <param name="pattern">
+        /// 签名字符串，格式详见 <see cref="SigPatternInfo"/>。
+        /// </param>
+        /// <param name="name">
+        /// （可选）该签名的名称，用于调试或报错信息中显示。
+        /// </param>
+        /// <returns>匹配到的内存地址指针（如启用相对寻址，则为计算后的地址）。</returns>
         public IntPtr ScanText(string pattern, string name = null)
+            => ScanText(new SigPatternInfo(pattern), name);
+
+        /// <summary>
+        /// 使用已构造的签名模式对象扫描内存，并返回唯一匹配的位置指针。<br/><br/>
+        /// 通常应使用 <see cref="ScanText(string, string)"/> 简化调用流程。<br/><br/>
+        /// 本重载用于处理更复杂的情况，详见 <see cref="SigPatternInfo(string, int, int?)"/>。
+        /// </summary>
+        /// <param name="sig">
+        /// 签名模式对象，包含解析后的字节序列，以及相对寻址参数（如启用）。
+        /// </param>
+        /// <param name="name">
+        /// （可选）该签名的名称，用于调试或报错信息中显示。
+        /// </param>
+        /// <returns>匹配到的内存地址指针（如启用相对寻址，则为计算后的地址）。</returns>
+        public IntPtr ScanText(SigPatternInfo sig, string name = null)
         {
-            (var bytes, var relAddressingOffset) = HexToBytes(pattern);
-            var results = FindPattern(bytes);
+            var results = FindPattern(sig.Bytes);
             if (results.Count > 1)
             {
-                throw new ArgumentException(L.Get("PostNamazu/resultMultiple", 
+                throw new ArgumentException(L.Get("PostNamazu/resultMultiple",
                     name == null ? "" : $" {name} ",
                     results.Count
                 ));
             }
             if (results.Count == 0)
             {
-                throw new ArgumentException(L.Get("PostNamazu/resultNone", 
+                throw new ArgumentException(L.Get("PostNamazu/resultNone",
                     name == null ? "" : $" {name} "
                 ));
             }
 
             var patternPtr = results[0];
-            if (relAddressingOffset.HasValue) // 指定相对寻址
+            if (sig.IsRelAddressing) // 指定相对寻址
             {
-                var starPtr = patternPtr + relAddressingOffset.Value; // 第一个 * 的地址
-                patternPtr = starPtr + 4 + ReadInt32(starPtr);
+                var disp32Ptr = patternPtr + sig.Disp32Offset; // 第一个 * 的地址
+                patternPtr = patternPtr + sig.NextCmdOffset + ReadInt32(disp32Ptr);
             }
 #if DEBUG
-            PostNamazu.Plugin.PluginUI.Log($"[Scanner] {name ?? ""} ({pattern}) @ {patternPtr} (jump={relAddressingOffset?.ToString() ?? "null"})");
+            PostNamazu.Plugin.PluginUi.Log($"[Scanner] {name ?? ""} @ {patternPtr} ({sig})");
 #endif 
             return patternPtr;
+        }
+
+        public struct SigPatternInfo
+        {
+            public readonly string Pattern;
+            /// <summary> 内存签名的字节序列对应的整数值。通配符 ? 和 * 分别以 -1 和 -2 表示。 </summary>
+            public readonly List<int> Bytes;
+            /// <summary> 是否为相对寻址。 </summary>
+            public bool IsRelAddressing;
+            /// <summary> 相对寻址的 disp32（即 * 的起始处）相对于内存签名起始处的偏移。</summary>
+            public int Disp32Offset;
+            /// <summary> 相对寻址的下一条指令（即 * 后的指令）相对于内存签名起始处的偏移。</summary>
+            public int NextCmdOffset;
+
+            /// <summary>
+            /// 构造一个签名模式信息对象，将十六进制字符串解析为字节列表，并判断是否使用相对寻址。<br /><br />
+            /// 
+            /// ? 或 ?? 表示普通通配符，如：<br />
+            /// <c> · 48 89 5C 24 ?? ... </c> <br /><br />
+            /// 
+            /// * 或 ** 表示相对寻址通配符，如果使用，则至少有连续四个，如：<br />
+            /// <c> · 48 8D 0D * * * * 4C 8B 85 ... </c> <br />
+            /// <c> · E8 * * * * 48 83 C4 ? E9 ? ? ? ? ... </c> <br />
+            /// <c> · 48 83 3D * * * * * 74 ? ... </c>（第五个星号为指令末尾的立即数的占位符）<br /><br />
+            /// 相对寻址计算方式为 * 后的地址 + 前四个 * 对应的 int 偏移量。<br /><br />
+            /// 
+            /// 如果需要手动指定偏移量和相对寻址指令长度，请使用 <see cref="SigPatternInfo(string, int, int?)"/> 构造函数。
+            /// </summary>
+            public SigPatternInfo(string hexPattern)
+            {
+                Pattern = hexPattern;
+                Bytes = hexPattern.Trim().Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(s =>
+                {
+                    return s switch
+                    {
+                        "*" or "**" => -2,
+                        "?" or "??" => -1,
+                        _ => byte.Parse(s, NumberStyles.AllowHexSpecifier),
+                    };
+                }).ToList();
+
+                // relative addressing
+                var firstStar = Bytes.IndexOf(-2);
+                if (firstStar >= 0)
+                {
+                    var lastStar = Bytes.LastIndexOf(-2);
+                    var starLength = lastStar - firstStar + 1;
+                    if (starLength < 4 || Bytes.GetRange(firstStar, starLength).Any(b => b != -2))
+                    {
+                        throw new FormatException(L.Get("PostNamazu/relAddressingFormatError", hexPattern));
+                    }
+                    IsRelAddressing = true;
+                    Disp32Offset = firstStar;
+                    NextCmdOffset = lastStar + 1;
+                }
+                else
+                {
+                    IsRelAddressing = false;
+                    Disp32Offset = 0;
+                    NextCmdOffset = 0;
+                }
+            }
+
+            /// <summary>
+            /// 构造一个签名模式信息对象，并强制指定相对寻址的偏移与指令结束位置。<br /><br />
+            /// 用于处理复杂、非标准格式、或距离相对寻址指令较远的内存签名。<br /><br />
+            /// 此构造函数不会再自动判断是否使用相对寻址，而是直接按指定值处理。<br /><br />
+            /// 参数 <paramref name="nextCmdOffset"/> 若未指定，则默认指令以相对寻址的地址结尾。<br /><br />
+            /// 通常推荐使用 <see cref="SigPatternInfo(string)"/> 由星号自动识别相对寻址。
+            /// </summary>
+            public SigPatternInfo(string hexPattern, int disp32Offset, int? nextCmdOffset = null) : this(hexPattern)
+            {
+                IsRelAddressing = true;
+                Disp32Offset = disp32Offset;
+                NextCmdOffset = nextCmdOffset ?? disp32Offset + 4;
+            }
+
+            public override string ToString() => IsRelAddressing 
+                ? $"{Pattern}, Disp32Offset={Disp32Offset}, NextCmdOffset={NextCmdOffset}" 
+                : Pattern;
         }
 
         public List<IntPtr> FindPattern(List<int> pattern)
@@ -451,33 +545,6 @@ namespace PostNamazu.Common
             return true;
         }
 
-        (List<int>, int?) HexToBytes(string hex) 
-        {
-            var bytes = hex.Trim().Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(s =>
-            {
-                return s switch
-                {
-                    "*" or "**" => -2,
-                    "?" or "??" => -1,
-                    _ => byte.Parse(s, NumberStyles.AllowHexSpecifier),
-                };
-            }).ToList();
-
-            int? jump = null; // relative addressing
-            var idx = bytes.IndexOf(-2);
-            if (idx >= 0)
-            {
-                jump = idx;
-                if (jump > bytes.Count - 4 ||
-                    bytes.Skip(jump.Value).Take(4).Any(b => b != -2) ||   // these 4 digits must be *
-                    bytes.Skip(jump.Value + 4).Any(b => b == -2))         // no more * after these 4 digits
-                {
-                    throw new FormatException(L.Get("PostNamazu/relAddressingFormatError", hex));
-                }
-            }
-            return (bytes, jump);
-        }
-
         /// <summary>
         /// Scan for a .data address using a .text function.
         /// This is intended to be used with IDA sigs.
@@ -486,6 +553,7 @@ namespace PostNamazu.Common
         /// <param name="signature">The signature of the function using the data.</param>
         /// <param name="offset">The offset from function start of the instruction using the data.</param>
         /// <returns>An IntPtr to the static memory location.</returns>
+        [Obsolete("Use relative addressing sigcodes.")]
         public IntPtr GetStaticAddressFromSig(string signature, int offset = 0, string name = null) {
             var instrAddr = ScanText(signature, name);
             instrAddr = IntPtr.Add(instrAddr, offset);

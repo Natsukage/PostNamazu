@@ -207,8 +207,8 @@ namespace PostNamazu.Common.Localization
         private static readonly string exportWaymarksFail;
 
         // SigScanner相关
-        [Localized("Relative addressing sigcode ({0}) must contain exactly 4 consecutive stars (* * * *) and no additional * elsewhere.", 
-                   "相对寻址签名码（{0}）必须恰好包含4个连续的星号（* * * *），且其他地方不能有额外的*。")]
+        [Localized("Relative addressing sigcode ({0}) must contain at least 4 consecutive stars (* * * * ...) and no additional * elsewhere.",
+                   "相对寻址签名码（{0}）必须含至少四个连续星号通配符（* * * * ...），且无额外星号。")]
         private static readonly string relAddressingFormatError;
 
         [Localized("Scanned{0} and found {1} memory signatures, unable to determine a unique location.", 

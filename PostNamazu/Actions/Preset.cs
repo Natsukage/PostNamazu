@@ -1,20 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
-using PostNamazu.Attributes;
-using PostNamazu.Models;
-using Newtonsoft.Json;
-using PostNamazu.Common;
 using System.Text.RegularExpressions;
+using Newtonsoft.Json;
+using PostNamazu.Attributes;
+using PostNamazu.Common;
 using PostNamazu.Common.Localization;
+using PostNamazu.Models;
 #pragma warning disable CS0649 // 从未对字段赋值，字段将一直保持其默认值
 
 namespace PostNamazu.Actions
 {
     internal class Preset : NamazuModule
     {
-        private IntPtr UIModulePtr;
+        public IntPtr GetUIModulePtr;
+        private IntPtr UIModulePtr => Memory.CallInjected64<IntPtr>(GetUIModulePtr, PostNamazu.FrameworkPtr);
         private Int32 WayMarkSlotOffset;
-        public IntPtr MapIDPtr;
+
+        // 模组使用的是 ContentFinderCondition 而非 Map 或 Territory 的 Id
+        public IntPtr ContentFinderConditionIdPtr;
+
+        // FFXIVClientStructs/FFXIV/Client/UI/Misc/FieldMarkerModule
+        // [FieldOffset(0x48), FixedSizeArray] internal FixedSizeArray30<FieldMarkerPreset> _presets
+        int WaymarkDataOffset = 0x48;
+
+        // FFXIVClientStructs/FFXIV/Client/UI/Misc/FieldMarkerModule
+        // [StructLayout(LayoutKind.Explicit, Size = 0x68)] public partial struct FieldMarkerPreset
+        int FieldMarkerPresetSize = 0x68;
 
         // 本地化字符串定义
         [LocalizationProvider("Preset")]
@@ -27,13 +38,20 @@ namespace PostNamazu.Actions
         public override void GetOffsets()
         {
             base.GetOffsets();
-            var GetUiModulePtr = SigScanner.ScanText("E8 * * * * 80 7B 1D 01", "GetUiModulePtr");
-            UIModulePtr = Memory.CallInjected64<IntPtr>(GetUiModulePtr, PostNamazu.FrameworkPtr);
+            GetUIModulePtr = SigScanner.ScanText("E8 * * * * 80 7B 1D 01", nameof(GetUIModulePtr));
 
             // FFXIVClientStructs/FFXIV/Client/Game/GameMain.cs
-            var mapIDOffset = 0x40B8; // to-do：自动获取
-            // var mapIDOffset = SigScanner.Read<UInt16>(SigScanner.ScanText("44 89 81 ? ? ? ? 0F B7 84 24", "mapIDOffset") + 3);
-            MapIDPtr = SigScanner.ScanText("48 8D 0D * * * * 0F B6 55 ?? 24", "GameMainPtr") + mapIDOffset;
+            IntPtr gameMainPtr;
+            gameMainPtr = SigScanner.ScanText("48 8D 0D * * * * 0F B6 55 ?? 24", nameof(gameMainPtr));
+
+            // GameMain.CurrentContentFinderConditionId
+            // 7.2/7.3: offset = 0x40AC
+            // 进出副本时写入 id：
+            // 66 89 81 AC 40 00 00     mov [rcx+40ACh], ax
+            ushort contentFinderConditionIdOffset;
+            contentFinderConditionIdOffset = SigScanner.Read<ushort>(SigScanner.ScanText("66 89 81 ? ? ? ? 66 85 C0 74 ?", nameof(contentFinderConditionIdOffset)) + 3);
+
+            ContentFinderConditionIdPtr = gameMainPtr + contentFinderConditionIdOffset;
         }
 
         private void GetWayMarkSlotOffset()
@@ -50,9 +68,8 @@ namespace PostNamazu.Actions
             var Case0x11 = UIModuleSwitch.Case(0x11);
             var offset = SigScanner.Read<int>(Case0x11 + 14);
 
-            //var UIModulePtr = SigScanner.Read<IntPtr>(UIModulePtrPtr);
-            var UIModule = UIModulePtr;
-            var FastCallAddressPtr = SigScanner.Read<IntPtr>(UIModule) + offset;
+            var uiModule = UIModulePtr;
+            var FastCallAddressPtr = SigScanner.Read<IntPtr>(uiModule) + offset;
 
             var FastCallAddress = SigScanner.Read<IntPtr>(FastCallAddressPtr);
             //.text:00000001405BA9A0
@@ -62,16 +79,13 @@ namespace PostNamazu.Actions
             //.text:00000001405BA9A7                        sub_1405BA9A0   endp
             WayMarkSlotOffset = SigScanner.Read<Int32>(FastCallAddress + 3);
         }
+
         public IntPtr GetWaymarkDataPointerForSlot(uint slotNum)
         {
-            //var g_Framework_2 = MemoryService.Read<IntPtr>(g_Framework_2_Ptr);
-            //var UIModule = MemoryService.Read<IntPtr>(g_Framework_2 + 0x29F8);
-            //var UIModulePtr = SigScanner.Read<IntPtr>(UIModulePtrPtr);
-            var UIModule = UIModulePtr;
-
-            var WayMarkSlotPtr = UIModule + WayMarkSlotOffset;
-            var WaymarkDataPointer = WayMarkSlotPtr + (PostNamazu.IsCN ? 64 : 72) + (int)(104 * (slotNum - 1));
-            return WaymarkDataPointer;
+            var uiModulePtr = UIModulePtr;
+            var wayMarkSlotPtr = uiModulePtr + WayMarkSlotOffset;
+            var waymarkDataPtr = wayMarkSlotPtr + WaymarkDataOffset + (int)(FieldMarkerPresetSize * (slotNum - 1));
+            return waymarkDataPtr;
         }
 
         /// <summary>
@@ -80,8 +94,8 @@ namespace PostNamazu.Actions
         /// <param name="waymarks">标点合集对象</param>
         private void DoInsertPreset(WayMarks waymarks)
         {
-            if (waymarks.MapID is > 1000 or 0) 
-                waymarks.MapID = SigScanner.Read<ushort>(MapIDPtr);
+            if (waymarks.MapID is > 2000 or 0) 
+                waymarks.MapID = SigScanner.Read<ushort>(ContentFinderConditionIdPtr);
             if (waymarks.MapID == 0)
             {
                 Log(L.Get("Preset/MapIdIllegal"));
@@ -91,8 +105,8 @@ namespace PostNamazu.Actions
             
             IntPtr SlotOffset;
 
-            var pattern = @"^Slot0?(\d{1,2})$";
-            var match = Regex.Match(waymarks.Name, pattern,RegexOptions.IgnoreCase);
+            var pattern = @"^Slot\s*(\d+)$";
+            var match = Regex.Match(waymarks.Name.Trim(), pattern,RegexOptions.IgnoreCase);
 
             if (match.Success && uint.TryParse(match.Groups[1].Value, out var slotNum) && slotNum is > 0 and <= 30)
                 SlotOffset = GetWaymarkDataPointerForSlot(slotNum);
@@ -124,6 +138,7 @@ namespace PostNamazu.Actions
                     break;
             }
         }
+
         /// <summary>
         ///     构造预设结构，从0号头子的PPR抄来的
         /// </summary>
@@ -131,6 +146,17 @@ namespace PostNamazu.Actions
         /// <returns>byte[]预设结构</returns>
         public byte[] ConstructGamePreset(WayMarks waymarks)
         {
+            /*
+            [StructLayout(LayoutKind.Explicit, Size = 0x68)]
+            public partial struct FieldMarkerPreset
+            {
+                [FieldOffset(0x00), FixedSizeArray] internal FixedSizeArray8<GamePresetPoint> _markers;
+                [FieldOffset(0x60)] public byte ActiveMarkers;
+                [FieldOffset(0x62)] public ushort ContentFinderConditionId;
+                [FieldOffset(0x64)] public int Timestamp;
+            }
+            */
+
             //	List is easy because we can just push data on to it.
             var byteData = new List<byte>();
             byte activeMask = 0x00;
@@ -144,22 +170,23 @@ namespace PostNamazu.Actions
                 if (waymark.Active) activeMask |= 0b10000000;
             }
 
+            // 0x60
             byteData.Add(activeMask);
 
-            //	Reserved byte.
+            // 0x61 Reserved byte.
             byteData.Add((byte)0x00);
 
-            //	Territory ID.
+            // 0x62 ContentFinderCondition ID.
             byteData.AddRange(BitConverter.GetBytes(waymarks.MapID));
 
-            //	Time last modified.
+            // 0x64 Time last modified.
             var Time = new DateTimeOffset(DateTimeOffset.Now.UtcDateTime);
             byteData.AddRange(BitConverter.GetBytes((Int32)Time.ToUnixTimeSeconds()));
 
             //	Shouldn't ever come up with the wrong length, but just in case...
-            if (byteData.Count != 104)
+            if (byteData.Count != FieldMarkerPresetSize)
             {
-                throw new Exception("Error in ConstructGamePreset(): Constructed byte array was of an unexpected length.");
+                throw new Exception($"Error in {nameof(ConstructGamePreset)}(): Constructed byte array was of an unexpected length ({byteData.Count}).");
             }
 
             //	Send it out.

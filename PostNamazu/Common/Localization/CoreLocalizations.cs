@@ -81,6 +81,13 @@ namespace PostNamazu.Common.Localization
         [Localized("Exception when executing action {0}: \n{1}", "执行 {0} 动作时遇到错误：{1}")]
         private static readonly string doActionFail;
 
+        [Localized("FFXIV entrance function found ({0}).", "找到 FFXIV 入口函数（{0}）。")]
+        private static readonly string entranceFound;
+
+        [Localized("Specified FFXIV entrance functions not found, temporarily using the default DX11 function instead. Note that this may cause compatibility issues.",
+            "未找到指定的 FFXIV 入口函数，临时使用默认的 DX11 函数代替。注意这可能导致兼容性问题。")]
+        private static readonly string entranceNotFound;
+
         [Localized("Unable to start listening on HTTP port {0}: \n{1}", "无法在 {0} 端口启动监听：\n{1}")]
         private static readonly string httpException;
 
@@ -131,10 +138,14 @@ namespace PostNamazu.Common.Localization
         [Localized("Set region to Chinese server.", "已设置为国服。")]
         private static readonly string xivDetectRegionCN;
 
+        [Localized("Unable to detect region and other necessary data. If the game has recently updated, please wait for the plugin to be updated.",
+                   "无法检测到区域等关键信息。如果游戏此前更新了版本，请等待插件更新。")]
+        private static readonly string xivDetectRegionFail;
+
         [Localized("Set region to global server.", "已设置为国际服。")]
         private static readonly string xivDetectRegionGlobal;
 
-        [Localized("Detected GLOBAL key: {0}", "检测到GLOBAL密钥：{0}")]
+        [Localized("Detected GLOBAL key: {0}", "检测到 GLOBAL 密钥：{0}")]
         private static readonly string xivDetectKey;
 
         [Localized("Failed to find memory signature for Framework, some features will not be available. The plugin may need to be updated. Exception: {0}", 
@@ -150,11 +161,7 @@ namespace PostNamazu.Common.Localization
         [Localized("Error when injecting into FFXIV process, retry later: \n{0}", "注入 FFXIV 进程时发生错误，正在重试：\n{0}")]
         private static readonly string xivProcInjectException;
 
-        [Localized("Unable to inject into the current FFXIV process, it may have already been injected by another process. Please try restarting the game.", 
-                   "无法注入当前进程，可能是已经被其他进程注入了，请尝试重启游戏。")]
-        private static readonly string xivProcInjectFail;
-
-        [Localized("Failed to connect to FFXIV process {0}:\n{1}", "无法连接至FFXIV进程 {0}：\n{1}")]
+        [Localized("Failed to connect to FFXIV process {0}:\n{1}", "无法连接至 FFXIV 进程 {0}：\n{1}")]
         private static readonly string xivProcInjectFailWithError;
 
         [Localized("Switched to FFXIV process {0}.", "已切换至 FFXIV 进程 {0}。")]
@@ -212,10 +219,10 @@ namespace PostNamazu.Common.Localization
         private static readonly string relAddressingFormatError;
 
         [Localized("Scanned{0} and found {1} memory signatures, unable to determine a unique location.", 
-                   "扫描{0}发现了 {1} 个内存签名，无法确定唯一位置。")]
+                   "扫描{0} 发现了 {1} 个内存签名，无法确定唯一位置。")]
         private static readonly string resultMultiple;
 
-        [Localized("Scanned{0} and did not find the required memory signatures.", "扫描{0}未找到所需的内存签名。")]
+        [Localized("Scanned{0} and did not find the required memory signatures.", "扫描{0} 未找到所需的内存签名。")]
         private static readonly string resultNone;
     }
 } 

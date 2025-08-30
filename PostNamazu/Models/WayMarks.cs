@@ -9,6 +9,7 @@ namespace PostNamazu.Models
     public class WayMarks : IEnumerable<Waymark>
     {
         public string Name { get; set; }
+        /// <summary> 实际为 ContentFinderCondition ID，为保持标点 JSON 格式兼容性而写作 MapID。</summary>
         public ushort MapID { get; set; }
         public Waymark A { get; set; }
         public Waymark B { get; set; }

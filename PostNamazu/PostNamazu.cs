@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
+using static PostNamazu.Common.SigScanner;
 
 namespace PostNamazu
 {
@@ -268,13 +269,46 @@ namespace PostNamazu
             PluginUi.Log(L.Get("PostNamazu/sigScanning"));
             SigScanner = new SigScanner(FFXIV);
 
-            try
+            _entrancePtr = IntPtr.Zero;
+            if (_entrancePtr == IntPtr.Zero)
             {
-                _entrancePtr = SigScanner.ScanText("4C 8B DC 56 41 57 48 81 EC ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 84 24 ? ? ? ? 48 83 B9 ? ? ? ? ? 4C 8B FA"); // 7.0-7.2
+                try // 7.3h1 global: 0x1400CDDD0 TaskUpdateInputUI 原始
+                {
+                    _entrancePtr = SigScanner.ScanText("4C 8B DC 53 55 48 81 EC ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 84 24 ? ? ? ? 48 83 B9 ? ? ? ? ? 48 8B DA 48 8B E9 0F 84");
+                    PluginUi.Log(L.Get("PostNamazu/entranceFound", "7.3_raw"));
+                }
+                catch { }
             }
-            catch
+            if (_entrancePtr == IntPtr.Zero)
             {
-                _entrancePtr = IntPtr.Zero; // 7.3 临时修复，使用默认方式注入
+                try // 7.2 TaskUpdateInputUI 原始
+                {
+                    _entrancePtr = SigScanner.ScanText("4C 8B DC 56 41 57 48 81 EC ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 84 24 ? ? ? ? 48 83 B9 ? ? ? ? ? 4C 8B FA");
+                    PluginUi.Log(L.Get("PostNamazu/entranceFound", "7.2_raw"));
+                }
+                catch { }
+            }
+            if (_entrancePtr == IntPtr.Zero)
+            {
+                try // 7.3 交叉引用，防止冲突
+                {
+                    _entrancePtr = SigScanner.ScanText(new SigPatternInfo("48 8B C6 33 D2 48 89 87 ? ? ? ? 45 33 C0 4C 8D B7 ? ? ? ? 8D 4A ?", 0x129));
+                    PluginUi.Log(L.Get("PostNamazu/entranceFound", "7.3_xref"));
+                }
+                catch { }
+            }
+            if (_entrancePtr == IntPtr.Zero)
+            {
+                try // 7.2 交叉引用，防止冲突
+                {
+                    _entrancePtr = SigScanner.ScanText(new SigPatternInfo("33 D2 45 33 C0 4C 8B F8 8D 4A ? E8 ? ? ? ? 48 8D 0D", 0x13A));
+                    PluginUi.Log(L.Get("PostNamazu/entranceFound", "7.2_xref"));
+                }
+                catch { }
+            }
+            if (_entrancePtr == IntPtr.Zero)
+            {
+                PluginUi.Log(L.Get("PostNamazu/entranceNotFound"));
             }
 
             try {
@@ -284,7 +318,7 @@ namespace PostNamazu
                 return true;
             }
             catch (ArgumentException) {
-                PluginUi.Log(L.Get("PostNamazu/xivProcInjectFail"));
+                PluginUi.Log(L.Get("PostNamazu/xivDetectMemRegionFail"));
             }
             return false;
         }

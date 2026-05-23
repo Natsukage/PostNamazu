@@ -34,6 +34,7 @@ namespace PostNamazu
         internal FFXIV_ACT_Plugin.FFXIV_ACT_Plugin FFXIV_ACT_Plugin;
         public ExternalProcessMemory Memory;
         public SigScanner SigScanner;
+        internal GreyMagicCallScheduler CallScheduler;
 
         private IntPtr _entrancePtr;
         public Dictionary<string, bool> ActionEnabled => PluginUi.ActionEnabled; //直接使用UI控件上的ActionEnabled状态
@@ -213,8 +214,11 @@ namespace PostNamazu
         internal void Attach()
         {
             if (FFXIV?.HasExited != false) return;
+            DisposeMemoryResources();
+
             try {
                 Memory = new ExternalProcessMemory(FFXIV, true, false, _entrancePtr, false, 5, true);
+                CallScheduler = new GreyMagicCallScheduler(Memory, frameLeaseMs: 10);
                 PluginUi.Log(L.Get("PostNamazu/xivProcInject", FFXIV.Id));
                 State = StateEnum.Ready;
                 LogACT("Attached");
@@ -234,6 +238,7 @@ namespace PostNamazu
             }
             catch (Exception ex) {
                 PluginUi.Log(L.Get("PostNamazu/xivProcInjectFailWithError", FFXIV.Id, ex.Message + " \n" + ex.StackTrace));
+                DisposeMemoryResources();
                 FFXIV = null;
                 State = StateEnum.Failure;
             }
@@ -247,12 +252,25 @@ namespace PostNamazu
             {
                 m.State = StateEnum.NotReady;
             }
-            try 
+            DisposeMemoryResources();
+        }
+
+        private void DisposeMemoryResources()
+        {
+            try
             {
-                if (Memory != null && !Memory.Process.HasExited)
-                    Memory.Dispose();
+                var scheduler = CallScheduler;
+                CallScheduler = null;
+                scheduler?.Dispose();
+
+                var memory = Memory;
+                Memory = null;
+
+                if (memory?.Process.HasExited == false)
+                    memory.Dispose();
             }
-            catch (Exception) {
+            catch
+            {
                 // ignored
             }
         }

@@ -224,5 +224,35 @@ namespace PostNamazu.Common.Localization
 
         [Localized("Scanned{0} and did not find the required memory signatures.", "扫描{0} 未找到所需的内存签名。")]
         private static readonly string resultNone;
+
+        // GreyMagic 调用相关
+        [Localized("PostNamazu plugin is not initialized.", 
+                   "PostNamazu 插件未初始化。")]
+        private static readonly string greyMagicPluginNotInitialized;
+
+        [Localized("GreyMagic Memory is not initialized.", 
+                   "GreyMagic Memory 未初始化。")]
+        private static readonly string greyMagicMemoryNotInitialized;
+
+        [Localized("GreyMagic CallScheduler is not initialized.", 
+                   "GreyMagic CallScheduler 未初始化。")]
+        private static readonly string greyMagicCallSchedulerNotInitialized;
+
+        [Localized("Function pointer is null.", 
+                   "调用函数地址不能为空。")]
+        private static readonly string greyMagicFunctionPointerNull;
+
+        [Localized("GreyMagic call argument #{0} cannot be null.", 
+                   "GreyMagic 调用参数 #{0} 不能为 null。")]
+        private static readonly string greyMagicArgumentNull;
+
+        [Localized("GreyMagic does not support argument type {0}. Write the value to remote memory and pass its address as IntPtr.", 
+                   "GreyMagic 不支持 {0} 类型的调用参数。请先写入远程内存，再传入对应的 IntPtr 地址。")]
+        private static readonly string greyMagicUnsupportedArgumentType;
+
+        [Localized(
+            "The function call failed, and the game process may have crashed. Please restart ACT to avoid another crash. Common causes include conflicting Dalamud plugins, a game/plugin version mismatch, or a program error.",
+            "函数调用失败，游戏进程可能已崩溃，建议重启 ACT 以防再次崩溃。常见原因包括卫月插件冲突，游戏/插件版本不匹配，或程序错误。")]
+        private static readonly string greyMagicInjectionNoResponse;
     }
 } 

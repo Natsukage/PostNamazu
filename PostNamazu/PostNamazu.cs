@@ -14,7 +14,7 @@ using static PostNamazu.Common.SigScanner;
 
 namespace PostNamazu
 {
-    public class PostNamazu : IActPluginV1
+    public partial class PostNamazu : IActPluginV1
     {
         public PostNamazu()
         {

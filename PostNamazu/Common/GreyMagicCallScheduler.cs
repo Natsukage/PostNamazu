@@ -110,7 +110,7 @@ namespace PostNamazu.Common
                 {
                     _workerRunning = true;
                     _workerFinished.Reset();
-                    ThreadPool.QueueUserWorkItem(WorkerProc);
+                    StartWorkerThread();
                 }
 
                 // 尝试唤醒已有工作线程在 TryTakeNextCall 中 Monitor.Wait 的等待
@@ -141,6 +141,20 @@ namespace PostNamazu.Common
         }
 
         /// <summary>
+        ///   启动工作线程执行调度任务。
+        /// </summary>
+        private void StartWorkerThread()
+        {
+            var thread = new Thread(WorkerProc)
+            {
+                IsBackground = true,
+                Name = "PostNamazu GreyMagicCallScheduler"
+            };
+
+            thread.Start();
+        }
+
+        /// <summary>
         ///   工作线程入口，在一个由调度器持有的 FrameLock 窗口内依次执行已入队的调用。
         /// </summary>
         /// <remarks>
@@ -148,7 +162,7 @@ namespace PostNamazu.Common
         ///   如果工作线程本身发生异常，会将异常传播给尚未执行的队列项。
         /// </remarks>
 
-        private void WorkerProc(object _state)
+        private void WorkerProc()
         {
             _currentWorkerScheduler = this;
 
@@ -261,7 +275,7 @@ namespace PostNamazu.Common
         /// </remarks>
         private void FinalizeWorkerAndRestartIfNeeded()
         {
-            // 当前 worker 已经终止调度任务，清除当前线程防止误判重入调用
+            // 当前 worker 已经终止调度任务，清除当前线程上的调度器标记，防止误判重入调用
             // 如果 Action 内部再次调用 Call，应直接执行而不是重新入队，避免 worker 等待自己
             _currentWorkerScheduler = null;
 
@@ -286,7 +300,7 @@ namespace PostNamazu.Common
             }
 
             if (shouldRestart)
-                ThreadPool.QueueUserWorkItem(WorkerProc);
+                StartWorkerThread();
         }
 
         private List<ScheduledCall> DrainQueueNoLock()

@@ -81,5 +81,9 @@ namespace PostNamazu.Actions
                 _ = Memory.CallInjected64<int>(ProcessChatBoxPtr, raptureModule, allocatedMemory.Address, uiModulePtr);
             });
         }
+
+        [Obsolete]
+        [Command("normalcommand")] [Command("DoNormalTextCommand")]
+        public void DoNormalTextCommand(string command) => DoTextCommand(command);
     }
 }

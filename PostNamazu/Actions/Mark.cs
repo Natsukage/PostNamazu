@@ -1,9 +1,10 @@
 ﻿using Newtonsoft.Json;
+using PostNamazu.Attributes;
+using PostNamazu.Common;
+using PostNamazu.Common.Localization;
+using PostNamazu.Models;
 using System;
 using System.Linq;
-using PostNamazu.Attributes;
-using PostNamazu.Models;
-using PostNamazu.Common.Localization;
 #pragma warning disable CS0649 // 从未对字段赋值，字段将一直保持其默认值
 
 namespace PostNamazu.Actions
@@ -76,12 +77,9 @@ namespace PostNamazu.Actions
             {
                 PluginUI.Log($"Mark: Actor={actor.Name} (0x{actor.ID:X8}), Type={markingType} ({(int)markingType}), LocalOnly={localOnly}");
             }
-            ExecuteWithLock(() =>
-            {
-                Memory.CallInjected64<char>(LocalMarkingFunc, MarkingController, markingType - 1, actor.ID, 0); //本地标点的markingType从0开始，因此需要-1
-                if (!localOnly)
-                    Memory.CallInjected64<char>(MarkingFunc, MarkingController, markingType - 1, actor.ID); //模仿游戏函数，先执行本地再公开
-            });
+            PostNamazu.Call(LocalMarkingFunc, MarkingController, markingType - 1, actor.ID, 0); // 本地标点的 markingType 从 0 开始，因此需要 -1
+            if (!localOnly)
+                PostNamazu.Call(MarkingFunc, MarkingController, markingType - 1, actor.ID); // 模仿游戏函数，先执行本地再公开
         }
     }
 }

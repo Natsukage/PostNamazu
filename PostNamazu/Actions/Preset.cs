@@ -13,7 +13,7 @@ namespace PostNamazu.Actions
     internal class Preset : NamazuModule
     {
         public IntPtr GetUIModulePtr;
-        private IntPtr UIModulePtr => Memory.CallInjected64<IntPtr>(GetUIModulePtr, PostNamazu.FrameworkPtr);
+        private IntPtr UIModulePtr => PostNamazu.Call<IntPtr>(GetUIModulePtr, PostNamazu.FrameworkPtr);
         private Int32 WayMarkSlotOffset;
 
         // 模组使用的是 ContentFinderCondition 而非 Map 或 Territory 的 Id

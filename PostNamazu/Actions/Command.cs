@@ -61,25 +61,29 @@ namespace PostNamazu.Actions
             CheckChannel(ref command);
             PluginUI.Log(command);
 
-            ExecuteWithLock(() =>
+            var array = Encoding.UTF8.GetBytes(command);
+            using AllocatedMemory allocatedMemory = Memory.CreateAllocatedMemory(Constants.MemoryAllocationSize),
+                  allocatedMemory2 = Memory.CreateAllocatedMemory(array.Length + Constants.CommandBufferSize);
+            allocatedMemory2.AllocateOfChunk("cmd", array.Length);
+            allocatedMemory2.WriteBytes("cmd", array);
+            allocatedMemory.AllocateOfChunk<IntPtr>("cmdAddress");
+            allocatedMemory.AllocateOfChunk<long>("t1");
+            allocatedMemory.AllocateOfChunk<long>("tLength");
+            allocatedMemory.AllocateOfChunk<long>("t3");
+            allocatedMemory.Write("cmdAddress", allocatedMemory2.Address);
+            allocatedMemory.Write("t1", 0x40);
+            allocatedMemory.Write("tLength", array.Length + 1);
+            allocatedMemory.Write("t3", 0x00);
+            PostNamazu.ExecuteInFrameLock(() =>
             {
-                var array = Encoding.UTF8.GetBytes(command);
-                using AllocatedMemory allocatedMemory = Memory.CreateAllocatedMemory(Constants.MemoryAllocationSize), 
-                      allocatedMemory2 = Memory.CreateAllocatedMemory(array.Length + Constants.CommandBufferSize);
-                allocatedMemory2.AllocateOfChunk("cmd", array.Length);
-                allocatedMemory2.WriteBytes("cmd", array);
-                allocatedMemory.AllocateOfChunk<IntPtr>("cmdAddress");
-                allocatedMemory.AllocateOfChunk<long>("t1");
-                allocatedMemory.AllocateOfChunk<long>("tLength");
-                allocatedMemory.AllocateOfChunk<long>("t3");
-                allocatedMemory.Write("cmdAddress", allocatedMemory2.Address);
-                allocatedMemory.Write("t1", 0x40);
-                allocatedMemory.Write("tLength", array.Length + 1);
-                allocatedMemory.Write("t3", 0x00);
-                var uiModulePtr = Memory.CallInjected64<IntPtr>(GetUiModulePtr, PostNamazu.FrameworkPtr);
-                var raptureModule = Memory.CallInjected64<IntPtr>(Memory.Read<IntPtr>(Memory.Read<IntPtr>(uiModulePtr) + (0x8 * 9)), uiModulePtr);
-                _ = Memory.CallInjected64<int>(ProcessChatBoxPtr, raptureModule, allocatedMemory.Address, uiModulePtr);
+                var uiModulePtr = PostNamazu.Call<IntPtr>(GetUiModulePtr, PostNamazu.FrameworkPtr);
+
+                var getRaptureModuleVFunc = Memory.Read<IntPtr>(Memory.Read<IntPtr>(uiModulePtr) + (0x8 * 9));
+                var raptureModule = PostNamazu.Call<IntPtr>(getRaptureModuleVFunc, uiModulePtr);
+
+                PostNamazu.Call(ProcessChatBoxPtr, raptureModule, allocatedMemory.Address, uiModulePtr);
             });
+            
         }
 
         [Obsolete]

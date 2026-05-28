@@ -1,6 +1,7 @@
 ﻿using Advanced_Combat_Tracker;
 using Newtonsoft.Json;
 using PostNamazu.Attributes;
+using PostNamazu.Common;
 using PostNamazu.Common.Localization;
 using PostNamazu.Models;
 using System;
@@ -239,34 +240,31 @@ namespace PostNamazu.Actions
         /// <param name="waymarks">标点，传入 null 时清空标点，单个标点为 null 时忽略。</param>
         public void Public(WayMarks waymarks)
         {
-            ExecuteWithLock(() => 
-            {
-                if (waymarks == null || waymarks.All(waymark => waymark?.Active == false))
-                {   // clear all
-                    ExecuteCommand(313);
-                    if (waymarks == null)
-                    {
-                        Log(L.Get("WayMark/ClearPublic"));
-                    }
-                }
-                else
+            if (waymarks == null || waymarks.All(waymark => waymark?.Active == false))
+            {   // clear all
+                ExecuteCommand(313);
+                if (waymarks == null)
                 {
-                    var idx = -1;
-                    foreach (var waymark in waymarks)
-                    {
-                        idx++;
-                        if (waymark == null) continue;
-                        if (waymark.Active)
-                        {   // mark single
-                            ExecuteCommand(317, (uint)idx, UIntEncode(waymark.X), UIntEncode(waymark.Y), UIntEncode(waymark.Z));
-                        }
-                        else
-                        {   // clear single
-                            ExecuteCommand(318, (uint)idx);
-                        }
+                    Log(L.Get("WayMark/ClearPublic"));
+                }
+            }
+            else
+            {
+                var idx = -1;
+                foreach (var waymark in waymarks)
+                {
+                    idx++;
+                    if (waymark == null) continue;
+                    if (waymark.Active)
+                    {   // mark single
+                        ExecuteCommand(317, (uint)idx, UIntEncode(waymark.X), UIntEncode(waymark.Y), UIntEncode(waymark.Z));
+                    }
+                    else
+                    {   // clear single
+                        ExecuteCommand(318, (uint)idx);
                     }
                 }
-            });
+            }
         }
 
         private uint UIntEncode(float x) => (uint)(x * 1000);
@@ -274,7 +272,7 @@ namespace PostNamazu.Actions
         // 统一使用 uint 调用此内部函数（参数常用于传入 id 等，uint 相比于 int 更合理）
         // 防止 GreyMagic 多次调用时参数类型不一致报错
         private void ExecuteCommand(uint command, uint a1 = 0, uint a2 = 0, uint a3 = 0, uint a4 = 0)
-            => Memory.CallInjected64<IntPtr>(ExecuteCommandPtr, command, a1, a2, a3, a4);
+            => PostNamazu.Call(ExecuteCommandPtr, command, a1, a2, a3, a4);
 
         public bool GetInCombat()
         {

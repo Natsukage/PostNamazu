@@ -117,12 +117,14 @@ namespace PostNamazu.Actions
                 throw new Exception(L.Get("PostNamazu/emptyCommand"));
         }
 
-
-
         internal class IgnoredException : Exception {
             internal IgnoredException(string msg) : base(msg) { }
         }
 
+        /// <summary>
+        /// 持有 GreyMagic AssemblyLock 执行指定操作。<br />
+        /// 仅用于保护 GreyMagic 汇编/执行状态；不要用它包裹 CallInjected64 或自动调度的 Call。
+        /// </summary>
         public static void ExecuteWithLock(Action action)
         {
             var lockTaken = false;
@@ -137,6 +139,10 @@ namespace PostNamazu.Actions
             }
         }
 
+        /// <summary>
+        /// 持有 GreyMagic AssemblyLock 执行指定操作。<br />
+        /// 仅用于保护 GreyMagic 汇编/执行状态；不要用它包裹 CallInjected64 或自动调度的 Call。
+        /// </summary>
         public static T ExecuteWithLock<T>(Func<T> function)
         {
             var lockTaken = false;
